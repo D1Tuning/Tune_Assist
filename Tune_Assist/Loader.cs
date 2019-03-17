@@ -9,6 +9,7 @@
   public class Loader
   {
     private List<string> matchedHeaders = new List<string>();
+    private IndexFinder indexer = new IndexFinder();
 
     public DataTable LoadLog(BackgroundWorker bw, string fileName)
     {
@@ -23,11 +24,44 @@
           full = full.TrimEnd('\r');
         }
 
-
         string[] lines = full.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-        if (lines[0].EndsWith(","))
+
+        AutoTune.LogType = string.Empty;
+
+        // Find headers and log type (Ecutek or Uprev)
+        int line4Headers = 0;
+        for (; line4Headers < 10; ++line4Headers)
         {
-          lines[0].TrimEnd(',');
+          if (lines[line4Headers].StartsWith("#"))
+          {
+            continue;
+          }
+          else if (lines[line4Headers].StartsWith("Time (s)"))
+          {
+            AutoTune.LogType = "ecutek";
+
+            break;
+          }
+          else if (lines[line4Headers].StartsWith("Time"))
+          {
+            AutoTune.LogType = "uprev";
+            break;
+          }
+          else
+          {
+            Console.WriteLine("Could not find starting line for headers.");
+            return dt;
+          }
+        }
+
+        this.indexer.FindHeader_Indexes(lines[line4Headers]);
+
+        // Sets the row where headers are located.
+        AutoTune.Lineforheaders = line4Headers;
+
+        if (lines[line4Headers].EndsWith(","))
+        {
+          lines[line4Headers].TrimEnd(',');
         }
 
         if (lines.Length < 10)
@@ -35,13 +69,14 @@
           return dt;
         }
 
-        List<string> headers = new List<string>(lines[0].Split(','));
+        List<string> headers = new List<string>(lines[line4Headers].Split(','));
         List<int> skipValues = new List<int>();
         FileInfo fi = new FileInfo(fileName);
         long totalBytes = fi.Length;
         long bytesRead = 0;
         int headerindex = 0;
 
+        // Skips duplicate headers
         foreach (var label in headers)
         {
           if (!this.matchedHeaders.Contains(label))
@@ -69,7 +104,7 @@
           dt.Columns[h].ReadOnly = true;
         }
 
-        for (int x = 1; x < lines.Length - 1; ++x)
+        for (int x = line4Headers + 1; x < lines.Length - 1; ++x)
         {
           if (lines[x] == null)
           {

@@ -26,8 +26,10 @@
     private DataTable clDT2 = new DataTable();
     private DataTable olDT1 = new DataTable();
     private DataTable olDT2 = new DataTable();
-    private List<int> hits1 = new List<int>(64);
-    private List<int> hits2 = new List<int>(64);
+    private List<int> hitsCL1 = new List<int>(64);
+    private List<int> hitsCL2 = new List<int>(64);
+    private List<int> hitsOL1 = new List<int>(64);
+    private List<int> hitsOL2 = new List<int>(64);
     private IndexFinder indexer = new IndexFinder();
     private double accel;
     private double accelChange;
@@ -48,17 +50,17 @@
     private double longtrim2;
     private double maf1v;
     private double maf2v = 0;
-    private double nextaccel;
-    private int nexttime;
+    private double accelNext;
+    private double timeNext;
     private int shorttrim1;
     private int shorttrim2 = 100;
     private double target;
-    private int time;
+    private double time;
     private int totalLines = 0;
     private string clStatus = string.Empty;
     private string olStatus = string.Empty;
-    private bool dualTB;
     private bool accelAfterDecel;
+    private static int TotalHits;
 
     public List<double> MafVolts
     {
@@ -79,8 +81,10 @@
           this.maf2ClosedLoop.Add(100.00);
           this.maf1OpenLoop.Add(100.00);
           this.maf2OpenLoop.Add(100.00);
-          this.hits1.Add(0);
-          this.hits2.Add(0);
+          this.hitsCL1.Add(0);
+          this.hitsCL2.Add(0);
+          this.hitsOL1.Add(0);
+          this.hitsOL2.Add(0);
           this.clDT1.Columns.Add(Convert.ToString(d));
           this.clDT2.Columns.Add(Convert.ToString(d));
           this.olDT1.Columns.Add(Convert.ToString(d));
@@ -89,7 +93,7 @@
 
         if (tempgrid.Rows.Count >= 100)
         {
-          this.totalLines = tempgrid.Rows.Count;
+          this.totalLines = tempgrid.Rows.Count - AutoTune.Lineforheaders;
         }
         else
         {
@@ -97,88 +101,24 @@
           return dt;
         }
 
-        this.indexer.FindHeader_Indexes(tempgrid);
-        if (Properties.Settings.Default.MAF_IAT && this.indexer.IntakeAirTempDex != -1)
+
+        if (Properties.Settings.Default.MAF_IAT && IndexFinder.IntakeAirTempDex != -1)
         {
           this.FindIAT_average(tempgrid);
         }
 
-        // Build first line for the adjustment CL DataTable
-        if (this.clDT1.Rows.Count == 0)
+        this.BuildDT();
+
+        if (IndexFinder.TargetDex != -1 && IndexFinder.MafB1Dex != -1 && IndexFinder.AfrB1Dex != -1 && IndexFinder.AfrB2Dex != -1)
         {
-          DataRow dr = this.clDT1.NewRow();
-          int c = 0;
-          foreach (double d in mafVolts)
-          {
-            dr[c] = 1.1;
-            ++c;
-          }
-
-          this.clDT1.Rows.Add(dr);
-        }
-
-        if (this.indexer.MafB2Dex != -1)
-        {
-          this.dualTB = true;
-
-          // Build first line for the adjustment CL DataTable
-          if (this.clDT2.Rows.Count == 0)
-          {
-            DataRow dr = this.clDT2.NewRow();
-            int c = 0;
-            foreach (double d in mafVolts)
-            {
-              dr[c] = 1.1;
-              ++c;
-            }
-
-            this.clDT2.Rows.Add(dr);
-          }
-        }
-
-        // Build first line for the adjustment OL DataTable
-        if (this.olDT1.Rows.Count == 0)
-        {
-          DataRow dr = this.olDT1.NewRow();
-          int c = 0;
-          foreach (double d in mafVolts)
-          {
-            dr[c] = 1.1;
-            ++c;
-          }
-
-          this.olDT1.Rows.Add(dr);
-        }
-
-        if (this.indexer.MafB2Dex != -1)
-        {
-          this.dualTB = true;
-
-          // Build first line for the adjustment OL DataTable
-          if (this.olDT2.Rows.Count == 0)
-          {
-            DataRow dr = this.olDT2.NewRow();
-            int c = 0;
-            foreach (double d in mafVolts)
-            {
-              dr[c] = 1.1;
-              ++c;
-            }
-
-            this.olDT2.Rows.Add(dr);
-          }
-        }
-
-        if (this.indexer.TargetDex != -1 && this.indexer.MafB1Dex != -1 && this.indexer.AfrB1Dex != -1 && this.indexer.AfrB2Dex != -1 && this.indexer.CoolantTempDex != -1)
-        {
-          for (int r = 0; r < tempgrid.Rows.Count - 1; ++r)
+          for (int r = AutoTune.Lineforheaders + 1; r < tempgrid.Rows.Count - 1; ++r)
           {
             try
             {
-              this.target = Convert.ToDouble(tempgrid.Rows[r].Cells[this.indexer.TargetDex].Value);
-              this.maf1v = Convert.ToDouble(tempgrid.Rows[r].Cells[this.indexer.MafB1Dex].Value);
-              this.afr1 = Convert.ToDouble(tempgrid.Rows[r].Cells[this.indexer.AfrB1Dex].Value);
-              this.afr2 = Convert.ToDouble(tempgrid.Rows[r].Cells[this.indexer.AfrB2Dex].Value);
+              this.target = Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.TargetDex].Value);
+              this.maf1v = Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.MafB1Dex].Value);
+              this.afr1 = Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.AfrB1Dex].Value);
+              this.afr2 = Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.AfrB2Dex].Value);
             }
             catch
             {
@@ -186,23 +126,55 @@
               continue;
             }
 
-            if (this.indexer.TimeDex != -1 && this.indexer.StB1Dex != -1 && this.indexer.StB2Dex != -1)
+            if (IndexFinder.StB1Dex != -1 && IndexFinder.StB2Dex != -1)
             {
               try
               {
-                this.time = Convert.ToInt32(tempgrid.Rows[r].Cells[this.indexer.TimeDex].Value);
-                this.nexttime = Convert.ToInt32(tempgrid.Rows[r + 1].Cells[this.indexer.TimeDex].Value);
-                this.accel = Convert.ToDouble(tempgrid.Rows[r].Cells[this.indexer.AccelDex].Value);
-                this.nextaccel = Convert.ToDouble(tempgrid.Rows[r + 1].Cells[this.indexer.AccelDex].Value);
-                this.shorttrim1 = Convert.ToInt32(tempgrid.Rows[r].Cells[this.indexer.StB1Dex].Value);
-                this.shorttrim2 = Convert.ToInt32(tempgrid.Rows[r].Cells[this.indexer.StB1Dex].Value);
-                this.accelChange = Convert.ToDouble(((this.nextaccel - this.accel) / (this.nexttime - this.time)) * 1000);
-                this.coolantTemp = Convert.ToDouble(tempgrid.Rows[r + 1].Cells[this.indexer.CoolantTempDex].Value);
-                this.intakeAirTemp = Convert.ToInt32(tempgrid.Rows[r].Cells[this.indexer.IntakeAirTempDex].Value);
-
-                if (this.dualTB)
+                if (IndexFinder.AccelDex != -1)
                 {
-                  this.maf2v = Convert.ToDouble(tempgrid.Rows[r].Cells[this.indexer.MafB2Dex].Value);
+                  this.accel = Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.AccelDex].Value);
+                  this.accelNext = Convert.ToDouble(tempgrid.Rows[r + 1].Cells[IndexFinder.AccelDex].Value);
+                  if (IndexFinder.TimeDex != -1)
+                  {
+                    this.time = Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.TimeDex].Value);
+                    this.timeNext = Convert.ToDouble(tempgrid.Rows[r + 1].Cells[IndexFinder.TimeDex].Value);
+                    this.accelChange = Convert.ToDouble((this.accelNext - this.accel) * 1000);
+                  }
+                  else
+                  {
+                    this.accelChange = 0.0;
+                  }
+                }
+                else
+                {
+                  this.accel = 1.4;
+                  this.accelNext = 1.4;
+                }
+
+                if (IndexFinder.CoolantTempDex != -1)
+                {
+                  this.coolantTemp = Convert.ToDouble(tempgrid.Rows[r + 1].Cells[IndexFinder.CoolantTempDex].Value);
+                }
+                else
+                {
+                  this.coolantTemp = 200.1;
+                }
+
+                if (IndexFinder.IntakeAirTempDex != -1)
+                {
+                  this.intakeAirTemp = Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.IntakeAirTempDex].Value);
+                }
+                else
+                {
+                  this.intakeAirTemp = 200.1;
+                }
+
+                this.shorttrim1 = Convert.ToInt32(tempgrid.Rows[r].Cells[IndexFinder.StB1Dex].Value);
+                this.shorttrim2 = Convert.ToInt32(tempgrid.Rows[r].Cells[IndexFinder.StB1Dex].Value);
+
+                if (IndexFinder.DualTB)
+                {
+                  this.maf2v = Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.MafB2Dex].Value);
                 }
               }
               catch
@@ -224,14 +196,24 @@
                 continue;
               }
 
+              int minCoolantTemp = 174;
+              if (AutoTune.LogType == "ecutek")
+              {
+                minCoolantTemp = 79;
+              }
+              else if (AutoTune.LogType == "uprev")
+              {
+                minCoolantTemp = 174;
+              }
+
               // Closed loop
-              if (this.target == 14.7 && this.coolantTemp > 174 && Properties.Settings.Default.MAF_CL)
+              if (this.target == 14.7 && this.coolantTemp > minCoolantTemp && Properties.Settings.Default.MAF_CL)
               {
                 // Dual throttle bodies and have logged long term trim
-                if (this.indexer.LtB1Dex != -1 && this.indexer.LtB2Dex != -1 && this.dualTB)
+                if (IndexFinder.LtB1Dex != -1 && IndexFinder.LtB2Dex != -1 && IndexFinder.DualTB)
                 {
-                  this.longtrim1 = Convert.ToDouble(tempgrid.Rows[r].Cells[this.indexer.LtB1Dex].Value);
-                  this.longtrim2 = Convert.ToDouble(tempgrid.Rows[r].Cells[this.indexer.LtB2Dex].Value);
+                  this.longtrim1 = Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.LtB1Dex].Value);
+                  this.longtrim2 = Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.LtB2Dex].Value);
                   if (this.longtrim1 == 100)
                   {
                     this.finaltrim1 = this.shorttrim1;
@@ -252,17 +234,17 @@
                 }
 
                 // Dual throttle bodies and have NOT logged long term trim
-                else if (this.dualTB && (this.indexer.LtB1Dex == -1 || this.indexer.LtB2Dex == -1))
+                else if ((IndexFinder.LtB1Dex == -1 || IndexFinder.LtB2Dex == -1) && IndexFinder.DualTB)
                 {
                   this.finaltrim1 = this.shorttrim1;
                   this.finaltrim2 = this.shorttrim2;
                 }
 
                 // Single throttle body and have logged long term trim
-                else if (!this.dualTB && (this.indexer.LtB1Dex != -1 || this.indexer.LtB2Dex != -1))
+                else if (!IndexFinder.DualTB && (IndexFinder.LtB1Dex != -1 || IndexFinder.LtB2Dex != -1))
                 {
-                  this.longtrim1 = Convert.ToDouble(tempgrid.Rows[r].Cells[this.indexer.LtB1Dex].Value);
-                  this.longtrim2 = Convert.ToDouble(tempgrid.Rows[r].Cells[this.indexer.LtB2Dex].Value);
+                  this.longtrim1 = Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.LtB1Dex].Value);
+                  this.longtrim2 = Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.LtB2Dex].Value);
 
                   if (this.longtrim1 == 100)
                   {
@@ -295,46 +277,58 @@
                 if (this.indexFinder1 < 0)
                 {
                   this.indexFinder1 = ~this.indexFinder1;
+                  if (this.indexFinder1 <= 0 || this.indexFinder1 > mafVolts.Count)
+                  {
+                    continue;
+                  }
                 }
 
-                if (this.dualTB)
+                if (IndexFinder.DualTB)
                 {
                   this.indexFinder2 = mafVolts.BinarySearch(this.maf2v);
                   if (this.indexFinder2 < 0)
                   {
                     this.indexFinder2 = ~this.indexFinder2;
+                    if (this.indexFinder2 <= 0 || this.indexFinder2 > mafVolts.Count)
+                    {
+                      continue;
+                    }
                   }
                 }
 
                 // CLOSED LOOP
-                //  filter out intake air temp changes  &&  filter out quick accel pedal position changes
-                if (Properties.Settings.Default.MAF_IAT && this.indexer.IntakeAirTempDex != -1
-                        && (this.intakeAirTemp >= this.intakeAirTempAVG - 10 && this.intakeAirTemp <= this.intakeAirTempAVG + 10)
-                        && Properties.Settings.Default.MAF_ACCEL && this.accelChange > -0.1 && this.accelChange < 0.1
-                        && this.indexFinder1 >= 0 && this.indexFinder1 < mafVolts.Count)
+                // IAT filter: OFF -- ACCEL filter: ON
+                if ((!Properties.Settings.Default.MAF_IAT || IndexFinder.IntakeAirTempDex == -1)
+                      && Properties.Settings.Default.MAF_ACCEL && this.accelChange > -100 && this.accelChange < 100
+                      && this.indexFinder1 >= 0 && this.indexFinder1 < mafVolts.Count)
                 {
                   this.ClosedLoop_Start();
                 }
 
-                // Filter out quick accel pedal position changes
-                else if ((!Properties.Settings.Default.MAF_IAT || this.indexer.IntakeAirTempDex == -1)
-                        && Properties.Settings.Default.MAF_ACCEL && this.accelChange > -0.1 && this.accelChange < 0.1
-                        && this.indexFinder1 >= 0 && this.indexFinder1 < mafVolts.Count)
+                // IAT filter: ON -- ACCEL filter: OFF
+                else if (Properties.Settings.Default.MAF_IAT && IndexFinder.IntakeAirTempDex != -1
+                        && (this.intakeAirTemp >= this.intakeAirTempAVG - 10 && this.intakeAirTemp <= this.intakeAirTempAVG + 10)
+                        && (!Properties.Settings.Default.MAF_ACCEL || IndexFinder.AccelDex == -1))
                 {
                   this.ClosedLoop_Start();
                 }
 
-                // Filter out intake air temp changes
-                else if (Properties.Settings.Default.MAF_IAT && this.indexer.IntakeAirTempDex != -1
+                // filter out intake air temp changes  &&  filter out quick accel pedal position changes
+                else if (Properties.Settings.Default.MAF_IAT && IndexFinder.IntakeAirTempDex != -1
                         && (this.intakeAirTemp >= this.intakeAirTempAVG - 10 && this.intakeAirTemp <= this.intakeAirTempAVG + 10)
-                        && !Properties.Settings.Default.MAF_ACCEL && this.indexFinder1 >= 0 && this.indexFinder1 < mafVolts.Count)
+                        && Properties.Settings.Default.MAF_ACCEL && this.accelChange > -60 && this.accelChange < 60)
+                {
+                  this.ClosedLoop_Start();
+                }
+                else if ((Properties.Settings.Default.MAF_IAT || IndexFinder.IntakeAirTempDex != -1)
+                          && (!Properties.Settings.Default.MAF_ACCEL || IndexFinder.AccelDex == -1))
                 {
                   this.ClosedLoop_Start();
                 }
               }
 
               // Open loop
-              else if (this.target < 14.7 && this.shorttrim1 == 100 && this.afr1 < 20 && this.coolantTemp > 176 && Properties.Settings.Default.MAF_OL)
+              else if (this.target < 14.7 && this.shorttrim1 == 100 && this.afr1 < 20 && this.coolantTemp > minCoolantTemp && Properties.Settings.Default.MAF_OL)
               {
                 this.olTrim1 = this.afr1 / this.target;
                 this.olTrim2 = this.afr2 / this.target;
@@ -343,63 +337,68 @@
                 if (this.indexFinder1 < 0)
                 {
                   this.indexFinder1 = ~this.indexFinder1;
+                  if (this.indexFinder1 <= 0 || this.indexFinder1 > mafVolts.Count)
+                  {
+                    continue;
+                  }
                 }
 
-                if (this.dualTB)
+                if (IndexFinder.DualTB)
                 {
                   this.indexFinder2 = mafVolts.BinarySearch(this.maf2v);
                   if (this.indexFinder2 < 0)
                   {
                     this.indexFinder2 = ~this.indexFinder2;
-                  }
-                }
-
-                // Test "actual AFR"
-                if (r > 2)
-                {
-                  this.actualAFR1 = 0;
-                  this.actualAFR2 = 0;
-
-                  try
-                  {
-                    this.actualAFR1 = Convert.ToDouble(tempgrid.Rows[r + 2].Cells[this.indexer.AfrB1Dex].Value);
-                    if (this.dualTB)
+                    if (this.indexFinder2 <= 0 || this.indexFinder2 > mafVolts.Count)
                     {
-                      this.actualAFR2 = Convert.ToDouble(tempgrid.Rows[r + 2].Cells[this.indexer.AfrB2Dex].Value);
+                      continue;
                     }
                   }
-                  catch
+                }
+
+                this.actualAFR1 = 0;
+                this.actualAFR2 = 0;
+
+                try
+                {
+                  this.actualAFR1 = Convert.ToDouble(tempgrid.Rows[r + 2].Cells[IndexFinder.AfrB1Dex].Value);
+                  if (IndexFinder.DualTB)
                   {
-                    Console.WriteLine(" error while actualAFR values for row {0}", r);
-                    continue;
+                    this.actualAFR2 = Convert.ToDouble(tempgrid.Rows[r + 2].Cells[IndexFinder.AfrB2Dex].Value);
                   }
                 }
-
-                Console.Write(this.accelChange + "\n");
-                this.dualTB = this.dualTB && this.indexFinder2 >= 0 && this.indexFinder2 <= mafVolts.Count ? true : false;
+                catch
+                {
+                  Console.WriteLine(" error while actualAFR values for row {0}", r);
+                  continue;
+                }
 
                 // Open Loop Starter
-                //  filter out intake air temp changes  &&  filter out quick accel pedal position changes
-                if (Properties.Settings.Default.MAF_IAT && this.indexer.IntakeAirTempDex != -1
-                        && (this.intakeAirTemp >= this.intakeAirTempAVG - 10 && this.intakeAirTemp <= this.intakeAirTempAVG + 10)
-                        && Properties.Settings.Default.MAF_ACCEL && this.accelChange > -0.1 && this.accelChange < 0.1
-                        && this.indexFinder1 >= 0 && this.indexFinder1 < mafVolts.Count)
+                // IAT filter: OFF -- ACCEL filter: ON
+                if ((!Properties.Settings.Default.MAF_IAT || IndexFinder.IntakeAirTempDex == -1)
+                      && Properties.Settings.Default.MAF_ACCEL && this.accelChange > -60 && this.accelChange < 60
+                      && this.indexFinder1 >= 0 && this.indexFinder1 < mafVolts.Count)
                 {
                   this.OpenLoop_Start();
                 }
 
-                // Filter out quick accel pedal position changes
-                else if ((!Properties.Settings.Default.MAF_IAT || this.indexer.IntakeAirTempDex == -1)
-                        && Properties.Settings.Default.MAF_ACCEL && this.accelChange > -0.1 && this.accelChange < 0.1
-                        && this.indexFinder1 >= 0 && this.indexFinder1 < mafVolts.Count)
+                // IAT filter: ON -- ACCEL filter: OFF
+                else if (Properties.Settings.Default.MAF_IAT && IndexFinder.IntakeAirTempDex != -1
+                        && (this.intakeAirTemp >= this.intakeAirTempAVG - 10 && this.intakeAirTemp <= this.intakeAirTempAVG + 10)
+                        && (!Properties.Settings.Default.MAF_ACCEL || IndexFinder.AccelDex == -1))
                 {
                   this.OpenLoop_Start();
                 }
 
-                // Filter out intake air temp changes
-                else if (Properties.Settings.Default.MAF_IAT && this.indexer.IntakeAirTempDex != -1
+                // filter out intake air temp changes  &&  filter out quick accel pedal position changes
+                else if (Properties.Settings.Default.MAF_IAT && IndexFinder.IntakeAirTempDex != -1
                         && (this.intakeAirTemp >= this.intakeAirTempAVG - 10 && this.intakeAirTemp <= this.intakeAirTempAVG + 10)
-                        && !Properties.Settings.Default.MAF_ACCEL && this.indexFinder1 >= 0 && this.indexFinder1 < mafVolts.Count)
+                        && Properties.Settings.Default.MAF_ACCEL && this.accelChange > -60 && this.accelChange < 60)
+                {
+                  this.OpenLoop_Start();
+                }
+                else if ((Properties.Settings.Default.MAF_IAT || IndexFinder.IntakeAirTempDex != -1)
+                          && (!Properties.Settings.Default.MAF_ACCEL || IndexFinder.AccelDex == -1))
                 {
                   this.OpenLoop_Start();
                 }
@@ -409,23 +408,24 @@
             {
               StringBuilder sb = new StringBuilder();
               sb.Append("Could not find the following headers: \n");
-              if (this.indexer.TimeDex == -1) { sb.Append("Time\n"); }
-              if (this.indexer.StB1Dex == -1) { sb.Append("A/F CORR-B1 (%)\n"); }
-              if (this.indexer.StB2Dex == -1) { sb.Append("A/F CORR-B2 (%)\n"); }
-              if (this.indexer.AccelDex == -1) { sb.Append("ACCEL PED POS 1\n"); }
-              if (this.indexer.LtB1Dex == -1) { sb.Append("LT Fuel Trim B1 (%)\n"); }
-              if (this.indexer.LtB2Dex == -1) { sb.Append("LT Fuel Trim B2 (%)\n"); }
-              if (this.indexer.AfrB1Dex == -1) { sb.Append("AFR WB-B1\n"); }
-              if (this.indexer.AfrB2Dex == -1) { sb.Append("AFR WB-B2\n"); }
-              if (this.indexer.MafB1Dex == -1) { sb.Append("MAS A/F -B1 (V)\n"); }
-              if (this.indexer.MafB2Dex == -1) { sb.Append("MAS A/F -B2 (V)\n"); }
-              if (this.indexer.TargetDex == -1) { sb.Append("TARGET AFR\n"); }
-              if (this.indexer.IntakeAirTempDex == -1) { sb.Append("INTAKE AIR TMP\n"); }
-              if (this.indexer.CoolantTempDex == -1) { sb.Append("COOLANT TEMP\n"); }
+              if (IndexFinder.TimeDex == -1) { sb.Append("Time\n"); }
+              if (IndexFinder.StB1Dex == -1) { sb.Append("A/F CORR-B1 (%)\n"); }
+              if (IndexFinder.StB2Dex == -1) { sb.Append("A/F CORR-B2 (%)\n"); }
+              if (IndexFinder.AccelDex == -1) { sb.Append("ACCEL PED POS 1\n"); }
+              if (IndexFinder.LtB1Dex == -1) { sb.Append("LT Fuel Trim B1 (%)\n"); }
+              if (IndexFinder.LtB2Dex == -1) { sb.Append("LT Fuel Trim B2 (%)\n"); }
+              if (IndexFinder.AfrB1Dex == -1) { sb.Append("AFR WB-B1\n"); }
+              if (IndexFinder.AfrB2Dex == -1) { sb.Append("AFR WB-B2\n"); }
+              if (IndexFinder.MafB1Dex == -1) { sb.Append("MAS A/F -B1 (V)\n"); }
+              if (IndexFinder.MafB2Dex == -1) { sb.Append("MAS A/F -B2 (V)\n"); }
+              if (IndexFinder.TargetDex == -1) { sb.Append("TARGET AFR\n"); }
+              if (IndexFinder.IntakeAirTempDex == -1) { sb.Append("INTAKE AIR TMP\n"); }
+              if (IndexFinder.CoolantTempDex == -1) { sb.Append("COOLANT TEMP\n"); }
 
-              Console.WriteLine(sb.ToString());
-              MessageBox.Show("Error", "We could not find minimal parameters needed \n to calculate the MAF scaling adjustments.\n"
-                + sb.ToString() + "\n Please add these parameters to the uprev logger and try again.");
+              Console.WriteLine(Convert.ToString(sb));
+              MessageBox.Show(
+                "Error", "We could not find minimal parameters needed \n to calculate the MAF scaling adjustments.\n"
+                + Convert.ToString(sb) + "\n Please add these parameters to the uprev logger and try again.");
             }
           }
 
@@ -603,8 +603,8 @@
             dr[0] = (double)mafVolts[i];
             dr[1] = final1;
             dr[2] = final2;
-            dr[3] = (int)this.hits1[i];
-            dr[4] = (int)this.hits2[i];
+            dr[3] = (int)this.hitsCL1[i];
+            dr[4] = (int)this.hitsCL2[i];
             dt.Rows.Add(dr);
           }
         }
@@ -612,20 +612,20 @@
         {
           StringBuilder sb = new StringBuilder();
           sb.Append("Could not find the following headers: \n");
-          if (this.indexer.TimeDex == -1) { sb.Append("Time\n"); }
-          if (this.indexer.StB1Dex == -1) { sb.Append("A/F CORR-B1 (%)\n"); }
-          if (this.indexer.StB2Dex == -1) { sb.Append("A/F CORR-B2 (%)\n"); }
-          if (this.indexer.AccelDex == -1) { sb.Append("ACCEL PED POS 1\n"); }
-          if (this.indexer.LtB1Dex == -1) { sb.Append("LT Fuel Trim B1 (%)\n"); }
-          if (this.indexer.LtB2Dex == -1) { sb.Append("LT Fuel Trim B2 (%)\n"); }
-          if (this.indexer.AfrB1Dex == -1) { sb.Append("AFR WB-B1\n"); }
-          if (this.indexer.AfrB2Dex == -1) { sb.Append("AFR WB-B2\n"); }
-          if (this.indexer.MafB1Dex == -1) { sb.Append("MAS A/F -B1 (V)\n"); }
-          if (this.indexer.MafB2Dex == -1) { sb.Append("MAS A/F -B2 (V)\n"); }
-          if (this.indexer.TargetDex == -1) { sb.Append("TARGET AFR\n"); }
-          if (this.indexer.IntakeAirTempDex == -1) { sb.Append("INTAKE AIR TMP\n"); }
-          if (this.indexer.CoolantTempDex == -1) { sb.Append("COOLANT TEMP\n"); }
-          Console.WriteLine(sb.ToString());
+          if (IndexFinder.TimeDex == -1) { sb.Append("Time\n"); }
+          if (IndexFinder.StB1Dex == -1) { sb.Append("A/F CORR-B1 (%)\n"); }
+          if (IndexFinder.StB2Dex == -1) { sb.Append("A/F CORR-B2 (%)\n"); }
+          if (IndexFinder.AccelDex == -1) { sb.Append("ACCEL PED POS 1\n"); }
+          if (IndexFinder.LtB1Dex == -1) { sb.Append("LT Fuel Trim B1 (%)\n"); }
+          if (IndexFinder.LtB2Dex == -1) { sb.Append("LT Fuel Trim B2 (%)\n"); }
+          if (IndexFinder.AfrB1Dex == -1) { sb.Append("AFR WB-B1\n"); }
+          if (IndexFinder.AfrB2Dex == -1) { sb.Append("AFR WB-B2\n"); }
+          if (IndexFinder.MafB1Dex == -1) { sb.Append("MAS A/F -B1 (V)\n"); }
+          if (IndexFinder.MafB2Dex == -1) { sb.Append("MAS A/F -B2 (V)\n"); }
+          if (IndexFinder.TargetDex == -1) { sb.Append("TARGET AFR\n"); }
+          if (IndexFinder.IntakeAirTempDex == -1) { sb.Append("INTAKE AIR TMP\n"); }
+          if (IndexFinder.CoolantTempDex == -1) { sb.Append("COOLANT TEMP\n"); }
+          Console.WriteLine(Convert.ToString(sb));
           MessageBox.Show("Error", "We could not find minimal parameters needed \n to calculate Closed Loop MAF scaling adjustments.\n" + sb.ToString());
         }
 
@@ -635,14 +635,17 @@
 
     private void ClosedLoop_Start()
     {
-      this.dualTB = this.dualTB && this.indexFinder2 >= 0 && this.indexFinder2 <= mafVolts.Count ? true : false;
-
       // DUAL MAF
-      if (this.dualTB)
+      if (IndexFinder.DualTB)
       {
         // MAF1
         for (int i = 0; ;)
         {
+          if (this.finaltrim1 < 75 || this.finaltrim1 > 125)
+          {
+            break;
+          }
+
           // Find empty spot to insert value in DataTable
           if (i == this.clDT1.Rows.Count - 1 || this.clDT1.Rows.Count == 0)
           {
@@ -658,10 +661,6 @@
           }
 
           double cell1 = Convert.ToDouble(this.clDT1.Rows[i][this.indexFinder1]);
-          if (this.finaltrim1 < 75 || this.finaltrim1 > 125)
-          {
-            break;
-          }
 
           if (cell1 == 1.1)
           {
@@ -750,7 +749,7 @@
 
     private void ClosedLoop_Finish()
     {
-      if (this.dualTB)
+      if (IndexFinder.DualTB)
       {
         // MAF1
         for (int c = 0; c < this.clDT1.Columns.Count - 1; ++c)
@@ -771,16 +770,16 @@
           }
 
           // Shows how many hits were for each voltage
-          if (this.hits1[c] == 0)
+          if (this.hitsCL1[c] == 0)
           {
-            this.hits1[c] = tmpList.Count;
+            this.hitsCL1[c] = tmpList.Count;
           }
           else
           {
-            this.hits1[c] += tmpList.Count;
+            this.hitsCL1[c] += tmpList.Count;
           }
 
-          if (tmpList.Count > 5)
+          if (tmpList.Count > 2)
           {
             this.maf1ClosedLoop[c] = (double)tmpList.Average();
           }
@@ -809,16 +808,16 @@
           }
 
           // Shows how many hits were for each voltage
-          if (this.hits2[c] == 0)
+          if (this.hitsCL2[c] == 0)
           {
-            this.hits2[c] = tmpList.Count;
+            this.hitsCL2[c] = tmpList.Count;
           }
           else
           {
-            this.hits2[c] += tmpList.Count;
+            this.hitsCL2[c] += tmpList.Count;
           }
 
-          if (tmpList.Count > 5)
+          if (tmpList.Count > 2)
           {
             this.maf2ClosedLoop[c] = (double)tmpList.Average();
           }
@@ -850,16 +849,16 @@
           }
 
           // Shows how many hits were for each voltage
-          if (this.hits1[c] == 0)
+          if (this.hitsCL1[c] == 0)
           {
-            this.hits1[c] = tmpList.Count;
+            this.hitsCL1[c] = tmpList.Count;
           }
           else
           {
-            this.hits1[c] += tmpList.Count;
+            this.hitsCL1[c] += tmpList.Count;
           }
 
-          if (tmpList.Count > 5)
+          if (tmpList.Count > 2)
           {
             this.maf1ClosedLoop[c] = (double)tmpList.Average();
           }
@@ -873,7 +872,7 @@
 
     private void OpenLoop_Start()
     {
-      this.dualTB = this.dualTB && this.indexer.MafB2Dex != -1 ? true : false;
+      // this.dualTB = this.dualTB && IndexFinder.MafB2Dex != -1 ? true : false;
 
       // MAF 1 - write values to datatable
       for (int i = 0; ;)
@@ -886,7 +885,7 @@
         }
 
         // Add extra row if close to the end
-        if (i == this.olDT1.Rows.Count - 1 || this.clDT1.Rows.Count == 0)
+        if (i == this.olDT1.Rows.Count - 1)//|| this.olDT1.Rows.Count == 0)
         {
           DataRow dr = this.olDT1.NewRow();
           int c = 0;
@@ -910,7 +909,7 @@
         }
       }
 
-      if (!this.dualTB)
+      if (!IndexFinder.DualTB)
       {
         return;
       }
@@ -926,7 +925,7 @@
         double cell2 = Convert.ToDouble(this.olDT2.Rows[i][this.indexFinder2]);
 
         // Add extra row if close to the end
-        if (i == this.olDT2.Rows.Count - 1)
+        if (i == this.olDT2.Rows.Count - 1)// || this.olDT2.Rows.Count == 0)
         {
           DataRow dr = this.olDT2.NewRow();
           int c = 0;
@@ -972,16 +971,16 @@
         }
 
         // Shows how many hits were for each voltage
-        if (this.hits1[c] == 0)
+        if (this.hitsCL1[c] == 0)
         {
-          this.hits1[c] = tmpList.Count;
+          this.hitsCL1[c] = tmpList.Count;
         }
         else
         {
-          this.hits1[c] += tmpList.Count;
+          this.hitsCL1[c] += tmpList.Count;
         }
 
-        if (tmpList.Count > 5)
+        if (tmpList.Count > 2)
         {
           this.maf1OpenLoop[c] = (double)tmpList.Average();
         }
@@ -991,7 +990,7 @@
         }
       }
 
-      if (!this.dualTB)
+      if (!IndexFinder.DualTB)
       {
         return;
       }
@@ -1015,16 +1014,16 @@
         }
 
         // Shows how many hits were for each voltage
-        if (this.hits2[c] == 0)
+        if (this.hitsCL2[c] == 0)
         {
-          this.hits2[c] = tmpList.Count;
+          this.hitsCL2[c] = tmpList.Count;
         }
         else
         {
-          this.hits2[c] += tmpList.Count;
+          this.hitsCL2[c] += tmpList.Count;
         }
 
-        if (tmpList.Count > 5)
+        if (tmpList.Count > 2)
         {
           this.maf2OpenLoop[c] = (double)tmpList.Average();
         }
@@ -1040,40 +1039,40 @@
       if (Properties.Settings.Default.MAF_CL
       && !Properties.Settings.Default.MAF_IAT
       && !Properties.Settings.Default.MAF_ACCEL
-      && this.indexer.TargetDex != -1 && this.indexer.MafB1Dex != -1
-      && this.indexer.AfrB1Dex != -1 && this.indexer.AfrB2Dex != -1
-      && this.indexer.CoolantTempDex != -1)
+      && IndexFinder.TargetDex != -1 && IndexFinder.MafB1Dex != -1
+      && IndexFinder.AfrB1Dex != -1 && IndexFinder.AfrB2Dex != -1
+      && IndexFinder.CoolantTempDex != -1)
       {
         this.clStatus = "CL_Basic";
       }
       else if (Properties.Settings.Default.MAF_CL
       && Properties.Settings.Default.MAF_IAT
       && !Properties.Settings.Default.MAF_ACCEL
-      && this.indexer.TargetDex != -1 && this.indexer.MafB1Dex != -1
-      && this.indexer.AfrB1Dex != -1 && this.indexer.AfrB2Dex != -1
-      && this.indexer.CoolantTempDex != -1
-      && this.indexer.IntakeAirTempDex != -1)
+      && IndexFinder.TargetDex != -1 && IndexFinder.MafB1Dex != -1
+      && IndexFinder.AfrB1Dex != -1 && IndexFinder.AfrB2Dex != -1
+      && IndexFinder.CoolantTempDex != -1
+      && IndexFinder.IntakeAirTempDex != -1)
       {
         this.clStatus = "CL_IAT";
       }
       else if (Properties.Settings.Default.MAF_CL
       && !Properties.Settings.Default.MAF_IAT
       && Properties.Settings.Default.MAF_ACCEL
-      && this.indexer.TargetDex != -1 && this.indexer.MafB1Dex != -1
-      && this.indexer.AfrB1Dex != -1 && this.indexer.AfrB2Dex != -1
-      && this.indexer.CoolantTempDex != -1
-      && this.indexer.AccelDex != -1)
+      && IndexFinder.TargetDex != -1 && IndexFinder.MafB1Dex != -1
+      && IndexFinder.AfrB1Dex != -1 && IndexFinder.AfrB2Dex != -1
+      && IndexFinder.CoolantTempDex != -1
+      && IndexFinder.AccelDex != -1)
       {
         this.clStatus = "CL_ACCEL";
       }
       else if (Properties.Settings.Default.MAF_CL
       && Properties.Settings.Default.MAF_IAT
       && Properties.Settings.Default.MAF_ACCEL
-      && this.indexer.TargetDex != -1 && this.indexer.MafB1Dex != -1
-      && this.indexer.AfrB1Dex != -1 && this.indexer.AfrB2Dex != -1
-      && this.indexer.CoolantTempDex != -1
-      && this.indexer.IntakeAirTempDex != -1
-      && this.indexer.AccelDex != -1)
+      && IndexFinder.TargetDex != -1 && IndexFinder.MafB1Dex != -1
+      && IndexFinder.AfrB1Dex != -1 && IndexFinder.AfrB2Dex != -1
+      && IndexFinder.CoolantTempDex != -1
+      && IndexFinder.IntakeAirTempDex != -1
+      && IndexFinder.AccelDex != -1)
       {
         this.clStatus = "CL_Full";
       }
@@ -1083,9 +1082,9 @@
       }
 
       if (Properties.Settings.Default.MAF_OL
-      && this.indexer.TargetDex != -1 && this.indexer.MafB1Dex != -1
-      && this.indexer.AfrB1Dex != -1 && this.indexer.AfrB2Dex != -1
-      && this.indexer.CoolantTempDex != -1)
+      && IndexFinder.TargetDex != -1 && IndexFinder.MafB1Dex != -1
+      && IndexFinder.AfrB1Dex != -1 && IndexFinder.AfrB2Dex != -1
+      && IndexFinder.CoolantTempDex != -1)
       {
         this.olStatus = "OL_Full";
       }
@@ -1095,18 +1094,85 @@
       }
     }
 
+    private void BuildDT()
+    {
+      // Build first line for the adjustment CL DataTable
+      if (this.clDT1.Rows.Count == 0)
+      {
+        DataRow dr = this.clDT1.NewRow();
+        int c = 0;
+        foreach (double d in mafVolts)
+        {
+          dr[c] = 1.1;
+          ++c;
+        }
+
+        this.clDT1.Rows.Add(dr);
+      }
+
+      if (IndexFinder.DualTB)
+      {
+        // Build first line for the adjustment CL DataTable
+        if (this.clDT2.Rows.Count == 0)
+        {
+          DataRow dr = this.clDT2.NewRow();
+          int c = 0;
+          foreach (double d in mafVolts)
+          {
+            dr[c] = 1.1;
+            ++c;
+          }
+
+          this.clDT2.Rows.Add(dr);
+        }
+      }
+
+      // Build first line for the adjustment OL DataTable
+      if (this.olDT1.Rows.Count == 0)
+      {
+        DataRow dr = this.olDT1.NewRow();
+        int c = 0;
+        foreach (double d in mafVolts)
+        {
+          dr[c] = 1.1;
+          ++c;
+        }
+
+        this.olDT1.Rows.Add(dr);
+      }
+
+      if (IndexFinder.DualTB)
+      {
+        // Build first line for the adjustment OL DataTable
+        if (this.olDT2.Rows.Count == 0)
+        {
+          DataRow dr = this.olDT2.NewRow();
+          int c = 0;
+          foreach (double d in mafVolts)
+          {
+            dr[c] = 1.1;
+            ++c;
+          }
+
+          this.olDT2.Rows.Add(dr);
+        }
+      }
+    }
+
     private void FindIAT_average(DataGridView tempgrid)
     {
       List<double> iatFull = new List<double>();
 
-      for (int r = 0; r < tempgrid.Rows.Count - 1; ++r)
+      for (int r = AutoTune.Lineforheaders + 2; r < tempgrid.Rows.Count - 1; ++r)
       {
-        double intakeAirTemp = Convert.ToDouble(tempgrid.Rows[r].Cells[this.indexer.IntakeAirTempDex].Value);
-        iatFull.Add(intakeAirTemp);
+        try
+        {
+          iatFull.Add(Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.IntakeAirTempDex].Value));
+        }
+        catch { }
       }
 
       this.intakeAirTempAVG = (double)iatFull.Average();
-      Console.WriteLine("The average Intake Air Temp is: " + Convert.ToString(this.intakeAirTempAVG));
     }
   }
 }

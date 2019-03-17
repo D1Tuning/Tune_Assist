@@ -4,194 +4,169 @@
 
   public class IndexFinder
   {
-    public int TimeDex { get; set; }
+    public static int TimeDex { get; set; }
 
-    public int StB1Dex { get; set; }
+    public static int StB1Dex { get; set; }
 
-    public int StB2Dex { get; set; }
+    public static int StB2Dex { get; set; }
 
-    public int AccelDex { get; set; }
+    public static int AccelDex { get; set; }
 
-    public int LtB1Dex { get; set; }
+    public static int LtB1Dex { get; set; }
 
-    public int LtB2Dex { get; set; }
+    public static int LtB2Dex { get; set; }
 
-    public int AfrB1Dex { get; set; }
+    public static int AfrB1Dex { get; set; }
 
-    public int AfrB2Dex { get; set; }
+    public static int AfrB2Dex { get; set; }
 
-    public int MafB1Dex { get; set; }
+    public static int MafB1Dex { get; set; }
 
-    public int MafB2Dex { get; set; }
+    public static int MafB2Dex { get; set; }
 
-    public int TargetDex { get; set; }
+    public static int TargetDex { get; set; }
 
-    public int IntakeAirTempDex { get; set; }
+    public static int IntakeAirTempDex { get; set; }
 
-    public int CoolantTempDex { get; set; }
+    public static int CoolantTempDex { get; set; }
 
-    public int FuelCompTraceDex { get; set; }
+    public static int FuelCompTraceDex { get; set; }
 
-    public int RpmDex { get; set; }
+    public static int RpmDex { get; set; }
 
-    public bool dualTB { get; set; }
-    
-    public void FindHeader_Indexes(DataGridView tempgrid)
+    public static bool DualTB { get; set; }
+
+    public void FindHeader_Indexes(string headerLine)
     {
+      string[] headerArray = headerLine.Split(',');
+      TimeDex = -1;
+      StB1Dex = -1;
+      StB2Dex = -1;
+      AccelDex = -1;
+      LtB1Dex = -1;
+      LtB2Dex = -1;
+      AfrB1Dex = -1;
+      AfrB2Dex = -1;
+      MafB1Dex = -1;
+      MafB2Dex = -1;
+      TargetDex = -1;
+      IntakeAirTempDex = -1;
+      CoolantTempDex = -1;
+      FuelCompTraceDex = -1;
+      RpmDex = -1;
 
-      if (tempgrid.Columns.Contains("Time"))
+      for (int i = 0; i < headerArray.Length; ++i)
       {
-        this.TimeDex = tempgrid.Columns["Time"].Index;
-      }
-      else
-      {
-        this.TimeDex = -1;
-      }
+        string header = headerArray[i];
 
-      if (tempgrid.Columns.Contains("A/F CORR-B1 (%)"))
-      {
-        this.StB1Dex = tempgrid.Columns["A/F CORR-B1 (%)"].Index;
-      }
-      else
-      {
-        this.StB1Dex = -1;
-      }
+        if (TimeDex == -1 && header.Contains("Time"))
+        {
+          TimeDex = i;
+          continue;
+        }
 
-      if (tempgrid.Columns.Contains("A/F CORR-B2 (%)"))
-      {
-        this.StB2Dex = tempgrid.Columns["A/F CORR-B2 (%)"].Index;
-      }
-      else
-      {
-        this.StB2Dex = -1;
-      }
+        if (StB1Dex == -1 && (header.Contains("Fuel Trim Short Term Bank #1")
+          || header.Contains("A/F CORR-B1")))
+        {
+          StB1Dex = i;
+          continue;
+        }
 
-      if (tempgrid.Columns.Contains("THROTTLE SENSOR 1 - B1(V)"))
-      {
-        this.AccelDex = tempgrid.Columns["THROTTLE SENSOR 1 - B1(V)"].Index;
-      }
-      else if (tempgrid.Columns.Contains("ACCEL PED POS 1 (V-Accel)"))
-      {
-        this.AccelDex = tempgrid.Columns["ACCEL PED POS 1 (V-Accel)"].Index;
-      }
-      else
-      {
-        this.AccelDex = -1;
-      }
+        if (StB2Dex == -1 && (header.Contains("Fuel Trim Short Term Bank #2")
+          || header.Contains("A/F CORR-B2")))
+        {
+          StB2Dex = i;
+          continue;
+        }
 
-      if (tempgrid.Columns.Contains("LT Fuel Trim B1 (%)"))
-      {
-        this.LtB1Dex = tempgrid.Columns["LT Fuel Trim B1 (%)"].Index;
-      }
-      else
-      {
-        this.LtB1Dex = -1;
-      }
+        if (AccelDex == -1 && (header.Contains("Accelerator Pedal Sensor #1")
+          || header.Contains("ACCEL PED POS 1")
+          || header.Contains("THROTTLE SENSOR 1 - B1")))
+        {
+          AccelDex = i;
+          continue;
+        }
 
-      if (tempgrid.Columns.Contains("LT Fuel Trim B2 (%)"))
-      {
-        this.LtB2Dex = tempgrid.Columns["LT Fuel Trim B2 (%)"].Index;
-      }
-      else
-      {
-        this.LtB2Dex = -1;
-      }
+        if (LtB1Dex == -1 && (header.Contains("Fuel Trim Long Term Bank #1")
+          || header.Contains("LT Fuel Trim B1")))
+        {
+          LtB1Dex = i;
+          continue;
+        }
 
-      if (tempgrid.Columns.Contains("LC-1 (1) AFR"))
-      {
-        this.AfrB1Dex = tempgrid.Columns["LC-1 (1) AFR"].Index;
-      }
-      else if (tempgrid.Columns.Contains("AFR WB-B1"))
-      {
-        this.AfrB1Dex = tempgrid.Columns["AFR WB-B1"].Index;
-      }
-      else
-      {
-        this.AfrB1Dex = -1;
-      }
+        if (LtB2Dex == -1 && (header.Contains("Fuel Trim Long Term Bank #2")
+          || header.Contains("LT Fuel Trim B2")))
+        {
+          LtB2Dex = i;
+          continue;
+        }
 
-      if (tempgrid.Columns.Contains("LC-1 (2) AFR"))
-      {
-        tempgrid.Columns.Contains("LC-1 (2) AFR");
-      }
-      else if (tempgrid.Columns.Contains("AFR WB-B2"))
-      {
-        this.AfrB2Dex = tempgrid.Columns["AFR WB-B2"].Index;
-      }
-      else
-      {
-        this.AfrB2Dex = -1;
-      }
+        if (AfrB1Dex == -1 && (header.Contains("AFR Bank1 (afr)")
+          || header.Contains("LC-1 (1) AFR")
+          || header.Contains("AFR WB-B1")))
+        {
+          AfrB1Dex = i;
+          continue;
+        }
 
-      if (tempgrid.Columns.Contains("MAS A/F -B1 (V)"))
-      {
-        this.MafB1Dex = tempgrid.Columns["MAS A/F -B1 (V)"].Index;
-      }
-      else
-      {
-        this.MafB1Dex = -1;
-      }
+        if (AfrB2Dex == -1 && (header.Contains("AFR Bank2 (afr)")
+          || header.Contains("LC-1 (2) AFR")
+          || header.Contains("AFR WB-B2")))
+        {
+          AfrB2Dex = i;
+          continue;
+        }
 
-      if (tempgrid.Columns.Contains("MAS A/F -B2 (V)"))
-      {
-        this.MafB2Dex = tempgrid.Columns["MAS A/F -B2 (V)"].Index;
-      }
-      else
-      {
-        this.MafB2Dex = -1;
-      }
+        if (MafB1Dex == -1 && (header.Contains("Mass Airflow Sensor Bank #1")
+          || header.Contains("MAS A/F -B1")))
+        {
+          MafB1Dex = i;
+          continue;
+        }
 
-      if (tempgrid.Columns.Contains("TARGET AFR"))
-      {
-        this.TargetDex = tempgrid.Columns["TARGET AFR"].Index;
-      }
-      else
-      {
-        this.TargetDex = -1;
-      }
+        if (MafB2Dex == -1 && (header.Contains("Mass Airflow Sensor Bank #2")
+          || header.Contains("MAS A/F -B2")))
+        {
+          DualTB = true;
+          MafB2Dex = i;
+          continue;
+        }
 
-      if (tempgrid.Columns.Contains("INTAKE AIR TMP"))
-      {
-        this.IntakeAirTempDex = tempgrid.Columns["INTAKE AIR TMP"].Index;
-      }
-      else
-      {
-        this.IntakeAirTempDex = -1;
-      }
+        if (TargetDex == -1 && (header.Contains("AFR Target")
+          || header.Contains("TARGET AFR")))
+        {
+          TargetDex = i;
+          continue;
+        }
 
-      if (tempgrid.Columns.Contains("COOLANT TEMP"))
-      {
-        this.CoolantTempDex = tempgrid.Columns["COOLANT TEMP"].Index;
-      }
-      else if (tempgrid.Columns.Contains("ENG OIL TEMP"))
-      {
-        this.CoolantTempDex = tempgrid.Columns["ENG OIL TEMP"].Index;
-      }
-      else
-      {
-        this.CoolantTempDex = -1;
-      }
+        if (IntakeAirTempDex == -1 && (header.Contains("Intake Air Temperature")
+          || header.Contains("INTAKE AIR TMP")))
+        {
+          IntakeAirTempDex = i;
+          continue;
+        }
 
-      if (tempgrid.Columns.Contains("Fuel Compensation X Trace"))
-      {
-        this.FuelCompTraceDex = tempgrid.Columns["Fuel Compensation X Trace"].Index;
-      }
-      else if (tempgrid.Columns.Contains("Fuel Compensation X Trace (%)"))
-      {
-        this.FuelCompTraceDex = tempgrid.Columns["Fuel Compensation X Trace (%)"].Index;
-      }
-      else
-      {
-        this.FuelCompTraceDex = -1;
-      }
+        if (CoolantTempDex == -1 && (header.Contains("Coolant Temperature")
+          || header.Contains("COOLANT TEMP")
+          || header.Contains("ENG OIL TEMP")))
+        {
+          CoolantTempDex = i;
+          continue;
+        }
 
-      if (tempgrid.Columns.Contains("ENGINE RPM (rpm)"))
-      {
-        this.RpmDex = tempgrid.Columns["ENGINE RPM (rpm)"].Index;
-      }
-      else
-      {
-        this.RpmDex = -1;
+        if (FuelCompTraceDex == -1 && header.Contains("Fuel Compensation X Trace"))
+        {
+          FuelCompTraceDex = i;
+          continue;
+        }
+
+        if (RpmDex == -1 && (header.Contains("Engine Speed")
+          || header.Contains("ENGINE RPM ")
+          || header.Contains("ENGINE RPM (rpm)")))
+        {
+          RpmDex = i;
+          continue;
+        }
       }
     }
   }

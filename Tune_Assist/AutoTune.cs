@@ -14,10 +14,10 @@
 
     public static AutoTune autotune;
     private BuffDV_FuelComp buffFC = new BuffDV_FuelComp();
-    private static List<int> mafB1UserInput = new List<int>();
-    private static List<int> mafB2UserInput = new List<int>();
-    private static List<int> adjustMAFb1 = new List<int>();
-    private static List<int> adjustMAFb2 = new List<int>();
+    private static List<double> mafB1UserInput = new List<double>();
+    private static List<double> mafB2UserInput = new List<double>();
+    private static List<double> adjustMAFb1 = new List<double>();
+    private static List<double> adjustMAFb2 = new List<double>();
     private BackgroundWorker worker;
     private BackgroundWorker mafWorker;
     private BackgroundWorker fuelCompWorker;
@@ -27,9 +27,6 @@
     private TextBox TextBox1 = new TextBox();
     private ParserMAF parserMAF = new ParserMAF();
     private ParserFuelComp parserFuelComp = new ParserFuelComp();
-    private List<Tuple<double, int, int>> mafB1 = new List<Tuple<double, int, int>>();
-    private List<Tuple<double, int, int>> mafB2 = new List<Tuple<double, int, int>>();
-    private bool dualTB;
     private bool mafOption_CL = Properties.Settings.Default.MAF_CL;
     private bool mafOption_OL = Properties.Settings.Default.MAF_OL;
     private bool mafOption_IAT = Properties.Settings.Default.MAF_IAT;
@@ -38,58 +35,9 @@
 
     public static string FileName { get; set; }
 
-    public List<int> MafB1UserInput
-    {
-      get
-      {
-        return mafB1UserInput;
-      }
+    public static string LogType { get; set; }
 
-      set
-      {
-        mafB1UserInput = value;
-      }
-    }
-
-    public List<int> MafB2UserInput
-    {
-      get
-      {
-        return mafB2UserInput;
-      }
-
-      set
-      {
-        mafB2UserInput = value;
-      }
-    }
-
-    public List<int> AdjustMAFb1
-    {
-      get
-      {
-        return adjustMAFb1;
-      }
-
-      set
-      {
-        adjustMAFb1 = value;
-      }
-    }
-
-    public List<int> AdjustMAFb2
-    {
-      get
-      {
-        return adjustMAFb2;
-      }
-
-      set
-      {
-        adjustMAFb2 = value;
-      }
-    }
-
+    public static int Lineforheaders { get; set; }
 
     public AutoTune()
     {
@@ -101,7 +49,7 @@
       {
         object o = new object();
         EventArgs e = new EventArgs();
-        this.openFileToolStripMenuItem_Open_Click(o, e);
+        this.OpenFileToolStripMenuItem_Open_Click(o, e);
       }
     }
 
@@ -111,7 +59,7 @@
       FileName = file;
     }
 
-    private void openFileToolStripMenuItem_Open_Click(object sender, EventArgs e)
+    private void OpenFileToolStripMenuItem_Open_Click(object sender, EventArgs e)
     {
       OpenFileDialog openFileDialog = new OpenFileDialog();
       openFileDialog.Filter = "csv Files (*.csv)|*.csv|All Files (*.*)|*.*";
@@ -138,11 +86,11 @@
           if (Properties.Settings.Default.MAF_CL)
           {
             this.worker = new BackgroundWorker();
-            this.worker.DoWork += this.loadworker_Start;
-            this.worker.RunWorkerCompleted += this.loadworker_ParseLogCompleted;
+            this.worker.DoWork += this.Loadworker_Start;
+            this.worker.RunWorkerCompleted += this.Loadworker_ParseLogCompleted;
             this.worker.WorkerReportsProgress = true;
             this.worker.WorkerSupportsCancellation = true;
-            this.worker.ProgressChanged += this.loadworker_ProgressChanged;
+            this.worker.ProgressChanged += this.Loadworker_ProgressChanged;
             this.worker.RunWorkerAsync(FileName);
           }
         }
@@ -156,14 +104,15 @@
       }
     }
 
-    private void closeFileToolStripMenuItem_Click(object sender, EventArgs e)
+    private void CloseFileToolStripMenuItem_Click(object sender, EventArgs e)
     {
       if (this.buffDV1.Rows.Count < 50)
       {
         return;
       }
 
-      if (MessageBox.Show("Are you sure you want to close this log?",
+      if (MessageBox.Show(
+        "Are you sure you want to close this log?",
           "Close Log",
           MessageBoxButtons.YesNo) == DialogResult.No)
       {
@@ -179,13 +128,13 @@
       this.buffDVmaf1.Refresh();
       this.buffDVmaf2.DataSource = null;
       this.buffDVmaf2.Refresh();
-      this.tab2Loader(false);
+      this.Tab2Loader(false);
       this.SetAppState(AppStates.Idle, null);
       this.closeFileToolStripMenuItem.Enabled = false;
 
     }
 
-    private void fileToolStripMenuItem_Exit_Click(object sender, EventArgs e)
+    private void FileToolStripMenuItem_Exit_Click(object sender, EventArgs e)
     {
       Application.ExitThread();
       Application.Exit();
@@ -209,18 +158,19 @@
       }
     }
 
-    private void loadworker_Start(object sender, DoWorkEventArgs e)
+    private void Loadworker_Start(object sender, DoWorkEventArgs e)
     {
       BackgroundWorker bw = sender as BackgroundWorker;
+      LogType = string.Empty;
       string sFileToRead = (string)e.Argument;
-      e.Result = loader.LoadLog(bw, sFileToRead);
+      e.Result = this.loader.LoadLog(bw, sFileToRead);
       if (bw.CancellationPending)
       {
         e.Cancel = true;
       }
     }
 
-    private void loadworker_ParseLogCompleted(object sender, RunWorkerCompletedEventArgs e)
+    private void Loadworker_ParseLogCompleted(object sender, RunWorkerCompletedEventArgs e)
     {
       try
       {
@@ -236,6 +186,7 @@
         {
           this.buffDV1.DataSource = null;
           this.buffDV1.DataSource = (DataTable)e.Result;
+
           if (this.buffDV1.RowCount > 80)
           {
             this.buffDV1.Visible = true;
@@ -247,10 +198,9 @@
 
             try
             {
-              if (this.buffDV1.Columns.Contains("MAS A/F -B2 (V)"))
+              if (IndexFinder.DualTB)
               {
                 this.buffDVmaf2.Visible = true;
-                this.dualTB = true;
                 this.buffDVmaf2.Refresh();
               }
 
@@ -272,12 +222,12 @@
       }
     }
 
-    private void loadworker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+    private void Loadworker_ProgressChanged(object sender, ProgressChangedEventArgs e)
     {
       this.ProgressBar.Value = e.ProgressPercentage;
     }
 
-    private void mafWorker_Start(object sender, DoWorkEventArgs e)
+    private void MAFworker_Start(object sender, DoWorkEventArgs e)
     {
       BackgroundWorker bw = sender as BackgroundWorker;
       DataGridView tempgrid = (DataGridView)e.Argument;
@@ -288,12 +238,12 @@
       }
     }
 
-    private void mafWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+    private void MAFworker_ProgressChanged(object sender, ProgressChangedEventArgs e)
     {
       this.ProgressBar.Value = e.ProgressPercentage;
     }
 
-    private void mafWorker_Completed(object sender, RunWorkerCompletedEventArgs e)
+    private void MAFworker_Completed(object sender, RunWorkerCompletedEventArgs e)
     {
       try
       {
@@ -313,21 +263,8 @@
           {
             for (int a = 0; a < 64; ++a)
             {
-              // if (!dt.Rows[a][1].Equals(100))  //mafOption_MINIMAL
-              // {
-              // Multiplier Easer.  This is a test to make the multiplier less
-              //double easer = ((double)dt.Rows[a][1] + 100) / 2;
-              //  this.buffDVmaf1["Multiplier", a].Value = easer / 100;
-              //}
               this.buffDVmaf1["Multiplier", a].Value = ((double)dt.Rows[a][1]) / 100;
-
               this.buffDVmaf2["Multiplier", a].Value = ((double)dt.Rows[a][2]) / 100;
-              //  if (!dt.Rows[a][2].Equals(100))
-              //   {
-              // double easer = ((double)dt.Rows[a][2] + 100) / 2;
-              // this.buffDVmaf2["Multiplier", a].Value = easer / 100;
-              //   }
-
               this.buffDVmaf1["Hits", a].Value = (int)dt.Rows[a][3];
               this.buffDVmaf2["Hits", a].Value = (int)dt.Rows[a][4];
             }
@@ -341,7 +278,11 @@
       {
         this.ProgressBar.Value = 0;
         this.SetAppState(AppStates.Idle, null);
-        this.buildFC_DT();
+        if (LogType == "uprev")
+        {
+          this.BuildFC_DT();
+        }
+
       }
     }
 
@@ -404,7 +345,7 @@
     private void BuildMAF_DT()
     {
       // MAF 1 DataTable
-      if (this.MAF1_DT.Columns.Count >0 || this.MAF1_DT.Rows.Count >0)
+      if (this.MAF1_DT.Columns.Count > 0 || this.MAF1_DT.Rows.Count > 0)
       {
         this.MAF1_DT.Clear();
         this.MAF2_DT.Clear();
@@ -415,8 +356,8 @@
       }
 
       this.MAF1_DT.Columns.Add("Volts", typeof(double));
-      this.MAF1_DT.Columns.Add("Values", typeof(int));
-      this.MAF1_DT.Columns.Add("Adjustments", typeof(int));
+      this.MAF1_DT.Columns.Add("Values", typeof(double));
+      this.MAF1_DT.Columns.Add("Adjustments", typeof(double));
       this.MAF1_DT.Columns.Add("Multiplier", typeof(double));
       this.MAF1_DT.Columns.Add("Hits", typeof(int));
 
@@ -436,17 +377,17 @@
       this.buffDVmaf1.Columns["Volts"].Resizable = System.Windows.Forms.DataGridViewTriState.False;
       this.buffDVmaf1.Columns["Values"].Width = 50;
       this.buffDVmaf1.Columns["Values"].ReadOnly = false;
-      this.buffDVmaf1.Columns["Values"].DefaultCellStyle.Format = "d";
+      this.buffDVmaf1.Columns["Values"].DefaultCellStyle.Format = "G";
       this.buffDVmaf1.Columns["Values"].SortMode = DataGridViewColumnSortMode.NotSortable;
       this.buffDVmaf1.Columns["Adjustments"].Resizable = System.Windows.Forms.DataGridViewTriState.False;
       this.buffDVmaf1.Columns["Adjustments"].Width = 80;
       this.buffDVmaf1.Columns["Adjustments"].ReadOnly = true;
-      this.buffDVmaf1.Columns["Adjustments"].DefaultCellStyle.Format = "d";
+      this.buffDVmaf1.Columns["Adjustments"].DefaultCellStyle.Format = "G";
       this.buffDVmaf1.Columns["Adjustments"].SortMode = DataGridViewColumnSortMode.NotSortable;
       this.buffDVmaf1.Columns["Adjustments"].Resizable = System.Windows.Forms.DataGridViewTriState.False;
       this.buffDVmaf1.Columns["Multiplier"].Width = 60;
       this.buffDVmaf1.Columns["Multiplier"].ReadOnly = true;
-      this.buffDVmaf1.Columns["Multiplier"].DefaultCellStyle.Format = "N4";
+      this.buffDVmaf1.Columns["Multiplier"].DefaultCellStyle.Format = "G";
       this.buffDVmaf1.Columns["Multiplier"].SortMode = DataGridViewColumnSortMode.NotSortable;
       this.buffDVmaf1.Columns["Hits"].Visible = false;
       this.buffDVmaf1.Columns["Hits"].Width = 55;
@@ -464,17 +405,17 @@
       this.buffDVmaf2.Columns["Volts"].Resizable = System.Windows.Forms.DataGridViewTriState.False;
       this.buffDVmaf2.Columns["Values"].Width = 50;
       this.buffDVmaf2.Columns["Values"].ReadOnly = false;
-      this.buffDVmaf2.Columns["Values"].DefaultCellStyle.Format = "d";
+      this.buffDVmaf2.Columns["Values"].DefaultCellStyle.Format = "G";
       this.buffDVmaf2.Columns["Values"].SortMode = DataGridViewColumnSortMode.NotSortable;
       this.buffDVmaf2.Columns["Adjustments"].Resizable = System.Windows.Forms.DataGridViewTriState.False;
       this.buffDVmaf2.Columns["Adjustments"].Width = 80;
       this.buffDVmaf2.Columns["Adjustments"].ReadOnly = true;
-      this.buffDVmaf2.Columns["Adjustments"].DefaultCellStyle.Format = "d";
+      this.buffDVmaf2.Columns["Adjustments"].DefaultCellStyle.Format = "G";
       this.buffDVmaf2.Columns["Adjustments"].SortMode = DataGridViewColumnSortMode.NotSortable;
       this.buffDVmaf2.Columns["Adjustments"].Resizable = System.Windows.Forms.DataGridViewTriState.False;
       this.buffDVmaf2.Columns["Multiplier"].Width = 55;
       this.buffDVmaf2.Columns["Multiplier"].ReadOnly = true;
-      this.buffDVmaf2.Columns["Multiplier"].DefaultCellStyle.Format = "N4";
+      this.buffDVmaf2.Columns["Multiplier"].DefaultCellStyle.Format = "G";
       this.buffDVmaf2.Columns["Multiplier"].SortMode = DataGridViewColumnSortMode.NotSortable;
       this.buffDVmaf2.Columns["Hits"].Visible = false;
       this.buffDVmaf2.Columns["Hits"].Width = 55;
@@ -483,10 +424,9 @@
       this.buffDVmaf2.Columns["Hits"].SortMode = DataGridViewColumnSortMode.NotSortable;
     }
 
-    private void buildFC_DT()
+    private void BuildFC_DT()
     {
       int index = 0;
-      //foreach (int i in BuffDV_FuelComp.FcRPM)
       foreach (int i in this.buffFC.FcRPM)
       {
         this.DV_FuelComp_RPM.Rows.Add();
@@ -521,7 +461,7 @@
       }
     }
 
-      private void ScaleMAF()
+    private void ScaleMAF()
     {
       // MAF1
       mafB1UserInput.Clear();
@@ -532,8 +472,7 @@
           string teststr = Convert.ToString(this.buffDVmaf1["Values", r].Value);
           if (teststr != string.Empty)
           {
-            mafB1UserInput.Add(Convert.ToInt32(teststr));
-
+            mafB1UserInput.Add(Convert.ToDouble(teststr));
           }
           else
           {
@@ -554,7 +493,7 @@
           string teststr = Convert.ToString(this.buffDVmaf2["Values", r].Value);
           if (teststr != string.Empty)
           {
-            mafB2UserInput.Add(Convert.ToInt32(teststr));
+            mafB2UserInput.Add(Convert.ToDouble(teststr));
           }
           else
           {
@@ -570,11 +509,11 @@
       try
       {
         this.mafWorker = new BackgroundWorker();
-        this.mafWorker.DoWork += this.mafWorker_Start;
-        this.mafWorker.RunWorkerCompleted += this.mafWorker_Completed;
+        this.mafWorker.DoWork += this.MAFworker_Start;
+        this.mafWorker.RunWorkerCompleted += this.MAFworker_Completed;
         this.mafWorker.WorkerReportsProgress = true;
         this.mafWorker.WorkerSupportsCancellation = true;
-        this.mafWorker.ProgressChanged += this.mafWorker_ProgressChanged;
+        this.mafWorker.ProgressChanged += this.MAFworker_ProgressChanged;
         this.mafWorker.RunWorkerAsync(this.buffDV1);
       }
       catch
@@ -590,36 +529,36 @@
       this.btnCancelParse.Visible = visible;
     }
 
-    private void btnCancel_Click(object sender, EventArgs e)
+    private void BtnCancel_Click(object sender, EventArgs e)
     {
       this.worker.CancelAsync();
     }
 
-    private void tabPage2_Enter(object sender, EventArgs e)
+    private void TabPage2_Enter(object sender, EventArgs e)
     {
       if (this.buffDV1.RowCount > 50)
       {
-        this.tab2Loader(true);
+        this.Tab2Loader(true);
       }
     }
 
-    private void tabPage2_Leave(object sender, EventArgs e)
+    private void TabPage2_Leave(object sender, EventArgs e)
     {
-      this.tab2Loader(false);
+      this.Tab2Loader(false);
     }
 
-    private void tab2Loader(bool status)
+    private void Tab2Loader(bool status)
     {
       this.textBox_MAF1.Visible = status;
       this.buffDVmaf1.Visible = status;
-      if (this.dualTB)
+      if (IndexFinder.DualTB)
       {
         this.textBox_MAF2.Visible = status;
         this.buffDVmaf2.Visible = status;
       }
     }
 
-    private void buffDVmaf_EditingControlShowing(object sender, DataGridViewEditingControlShowingEventArgs e)
+    private void BuffDVmaf_EditingControlShowing(object sender, DataGridViewEditingControlShowingEventArgs e)
     {
       e.Control.KeyPress -= new KeyPressEventHandler(this.Column1_KeyPress);
       if (this.buffDVmaf1.CurrentCell.ColumnIndex == this.buffDVmaf1.Columns["Values"].Index
@@ -640,7 +579,7 @@
       }
     }
 
-    private void selectAllValues()
+    private void SelectAllValues()
     {
       if (this.buffDVmaf1.Focused && !this.buffDVmaf2.Focused)
       {
@@ -682,7 +621,7 @@
       }
     }
 
-    private void copyValue()
+    private void CopyValue()
     {
       if (this.buffDVmaf1.Focused && !this.buffDVmaf2.Focused)
       {
@@ -692,22 +631,42 @@
           {
             string templine = this.buffDVmaf1.GetClipboardContent().GetText();
             string[] entries = templine.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-            List<string> hexValues = new List<string>();
-            foreach (var s in entries)
+            List<string> clipboardValues = new List<string>();
+
+            if (AutoTune.LogType == "uprev")
             {
-              if (!String.IsNullOrEmpty(s))
+              foreach (var s in entries)
               {
-                int num = Convert.ToInt32(s);
-                string hexstr = num.ToString("X2");
-                hexValues.Add(hexstr);
+                if (!string.IsNullOrEmpty(s))
+                {
+                  double percent = (Convert.ToDouble(s) / 100) * 65535;
+                  int percent2int = Convert.ToInt32(percent);
+                  string hexstr = percent2int.ToString("X2");
+                  clipboardValues.Add(hexstr);
+                }
+                else
+                {
+                  clipboardValues.Add("0000");
+                }
               }
-              else
+            }
+            else
+            {
+              foreach (var s in entries)
               {
-                hexValues.Add("0000");
+                if (!string.IsNullOrEmpty(s))
+                {
+                  double num = Convert.ToDouble(s);
+                  clipboardValues.Add(Convert.ToString(num));
+                }
+                else
+                {
+                  clipboardValues.Add("0.0");
+                }
               }
             }
 
-            var newvalues = hexValues.Aggregate((a, b) => a + " \r\n" + b);
+            var newvalues = clipboardValues.Aggregate((a, b) => a + " \r\n" + b);
             System.Windows.Forms.Clipboard.SetText(newvalues);
           }
           catch (System.Runtime.InteropServices.ExternalException)
@@ -724,21 +683,42 @@
           {
             string templine = this.buffDVmaf2.GetClipboardContent().GetText();
             string[] entries = templine.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-            List<string> hexValues = new List<string>();
-            foreach (var s in entries)
+            List<string> clipboardValues = new List<string>();
+
+            if (AutoTune.LogType == "uprev")
             {
-              if (!String.IsNullOrEmpty(s))
+              foreach (var s in entries)
               {
-                int num = Convert.ToInt32(s);
-                string hexstr = num.ToString("X2");
-                hexValues.Add(hexstr);
-              }
-              else
-              {
-                hexValues.Add("0000");
+                if (!string.IsNullOrEmpty(s))
+                {
+                  double percent = (Convert.ToDouble(s) / 100) * 65535;
+                  int percent2int = Convert.ToInt32(percent);
+                  string hexstr = percent2int.ToString("X2");
+                  clipboardValues.Add(hexstr);
+                }
+                else
+                {
+                  clipboardValues.Add("0000");
+                }
               }
             }
-            var newvalues = hexValues.Aggregate((a, b) => a + " \r\n" + b);
+            else
+            {
+              foreach (var s in entries)
+              {
+                if (!string.IsNullOrEmpty(s))
+                {
+                  double num = Convert.ToDouble(s);
+                  clipboardValues.Add(Convert.ToString(num));
+                }
+                else
+                {
+                  clipboardValues.Add("0.0");
+                }
+              }
+            }
+
+            var newvalues = clipboardValues.Aggregate((a, b) => a + " \r\n" + b);
             newvalues += " \r\n";
             System.Windows.Forms.Clipboard.SetText(newvalues);
           }
@@ -756,22 +736,44 @@
           {
             string templine = this.DV_Target.GetClipboardContent().GetText();
             string[] entries = templine.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-            List<string> hexValues = new List<string>();
-            foreach (var s in entries)
+            List<string> clipboardValues = new List<string>();
+
+            if (AutoTune.LogType == "uprev")
             {
-              if (!String.IsNullOrEmpty(s))
+
+
+              foreach (var s in entries)
               {
-                int num = Convert.ToInt32(s);
-                string hexstr = num.ToString("X2");
-                hexValues.Add(hexstr);
+                if (!string.IsNullOrEmpty(s))
+                {
+                  int num = Convert.ToInt32(s);
+                  string hexstr = num.ToString("X2");
+                  clipboardValues.Add(hexstr);
+                }
+                else
+                {
+                  clipboardValues.Add("0000");
+                }
               }
-              else
+            }
+            else
+            {
+              foreach (var s in entries)
               {
-                hexValues.Add("0000");
+                if (!string.IsNullOrEmpty(s))
+                {
+                  double num = Convert.ToDouble(s);
+
+                  clipboardValues.Add(Convert.ToString(num));
+                }
+                else
+                {
+                  clipboardValues.Add("0.0");
+                }
               }
             }
 
-            var newvalues = hexValues.Aggregate((a, b) => a + " \r\n" + b);
+            var newvalues = clipboardValues.Aggregate((a, b) => a + " \r\n" + b);
             newvalues += " \r\n";
             System.Windows.Forms.Clipboard.SetText(newvalues);
           }
@@ -783,80 +785,145 @@
       }
     }
 
-    private void pasteValue()
+    private void PasteValue()
     {
-      string s = Clipboard.GetText();
-      if (s.EndsWith("\r\n"))
+      if (AutoTune.LogType == "uprev")
       {
-        s = s.TrimEnd('\r', '\n');
-      }
+        string s = Clipboard.GetText();
+        if (s.EndsWith("\r\n"))
+        {
+          s = s.TrimEnd('\r', '\n');
+        }
 
-      string[] lines = s.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-      List<int> clnLines = new List<int>();
-      const int maxRow = 64;
-      int row;
-      foreach (string tmpstr in lines)
-      {
-        int hex;
-        string str = tmpstr;
-        if (str == "0"
-          || str == "00"
-          || str == "00 ")
+        string[] lines = s.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+        List<double> clnLines = new List<double>();
+        const int maxRow = 64;
+        int row;
+        int hex2int;
+        double int2double;
+        foreach (string tmpstr in lines)
         {
-          clnLines.Add(0);
-        }
-        else if (str.EndsWith(" ")
-                && str.Length >= 3
-                && str.Length <= 5)
-              {
-                str = str.TrimEnd(' ');
-                hex = int.Parse(str, System.Globalization.NumberStyles.HexNumber);
-                clnLines.Add(hex);
-              }
-        else if (str.Length < 3 || str.Length > 5)
-        {
-          hex = 0000;
-          clnLines.Add(hex);
-        }
-        else
-        {
-          clnLines.Add(Convert.ToInt32(str));
-        }
-      }
 
-      if (this.buffDVmaf1.Focused && !this.buffDVmaf2.Focused)
-      {
-        row = this.buffDVmaf1.CurrentCell.RowIndex;
-        for (int i = 0; i < clnLines.Count; i++)
-        {
-          if (row < maxRow)
+          string str2hex = tmpstr;
+          if (str2hex == "0"
+            || str2hex == "00"
+            || str2hex == "00 ")
           {
-            this.buffDVmaf1[1, row].Value = clnLines[i];
-            this.buffDVmaf1[2, row].Value = clnLines[i] * (double)this.buffDVmaf1[3, row].Value;  //Calculates the adjustment | user_value * multiplier
-            ++row;
+            clnLines.Add(0);
+          }
+          else if (str2hex.EndsWith(" ")
+                  && str2hex.Length >= 3
+                  && str2hex.Length <= 5)
+          {
+            str2hex = str2hex.TrimEnd(' ');
+            hex2int = int.Parse(str2hex, System.Globalization.NumberStyles.HexNumber);
+            int2double = Convert.ToDouble((hex2int / 65535f) * 100);
+            clnLines.Add(int2double);
+          }
+          else if (str2hex.Length < 3 || str2hex.Length > 5)
+          {
+            int2double = 0.0;
+            clnLines.Add(int2double);
+          }
+        }
+
+        if (this.buffDVmaf1.Focused && !this.buffDVmaf2.Focused)
+        {
+          row = this.buffDVmaf1.CurrentCell.RowIndex;
+          for (int i = 0; i < clnLines.Count; i++)
+          {
+            if (row < maxRow)
+            {
+              this.buffDVmaf1[1, row].Value = clnLines[i];
+              this.buffDVmaf1[2, row].Value = clnLines[i] * (double)this.buffDVmaf1[3, row].Value;  //Calculates the adjustment | user_value * multiplier
+              ++row;
+            }
+            else
+            {
+              break;
+            }
+          }
+        }
+        else if (!this.buffDVmaf1.Focused && this.buffDVmaf2.Focused)
+        {
+          row = this.buffDVmaf2.CurrentCell.RowIndex;
+          for (int i = 0; i < clnLines.Count; i++)
+          {
+            if (row < maxRow)
+            {
+              this.buffDVmaf2[1, row].Value = clnLines[i];
+              this.buffDVmaf2[2, row].Value = clnLines[i] * (double)this.buffDVmaf2[3, row].Value;  //Calculates the adjustment | user_value * multiplier
+              ++row;
+            }
+            else
+            {
+              break;
+
+            }
+          }
+        }
+      }
+      // if ecutek
+      else
+      {
+        string s = Clipboard.GetText();
+        if (s.EndsWith("\r\n"))
+        {
+          s = s.TrimEnd('\r', '\n');
+        }
+
+        string[] lines = s.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+        List<double> clnLines = new List<double>();
+        const int maxRow = 64;
+        int row;
+
+        foreach (string tmpstr in lines)
+        {
+          double parsedValue;
+          if (double.TryParse(tmpstr, out parsedValue))
+          {
+            parsedValue = Convert.ToDouble(tmpstr);
           }
           else
           {
-            break;
+            parsedValue = 0.00;
+          }
 
+          clnLines.Add(parsedValue);
+        }
+
+        if (this.buffDVmaf1.Focused && !this.buffDVmaf2.Focused)
+        {
+          row = this.buffDVmaf1.CurrentCell.RowIndex;
+          for (int i = 0; i < lines.Length; i++)
+          {
+            if (row < maxRow)
+            {
+              this.buffDVmaf1[1, row].Value = clnLines[i];
+              this.buffDVmaf1[2, row].Value = clnLines[i] * (double)this.buffDVmaf1[3, row].Value;  //Calculates the adjustment | user_value * multiplier
+              ++row;
+            }
+            else
+            {
+              break;
+            }
           }
         }
-      }
-      else if (!this.buffDVmaf1.Focused && this.buffDVmaf2.Focused)
-      {
-        row = this.buffDVmaf2.CurrentCell.RowIndex;
-        for (int i = 0; i < clnLines.Count; i++)
+        else if (!this.buffDVmaf1.Focused && this.buffDVmaf2.Focused)
         {
-          if (row < maxRow)
+          row = this.buffDVmaf2.CurrentCell.RowIndex;
+          for (int i = 0; i < clnLines.Count; i++)
           {
-            this.buffDVmaf2[1, row].Value = clnLines[i];
-            this.buffDVmaf2[2, row].Value = clnLines[i] * (double)this.buffDVmaf2[3, row].Value;  //Calculates the adjustment | user_value * multiplier
-            ++row;
-          }
-          else
-          {
-            break;
-
+            if (row < maxRow)
+            {
+              this.buffDVmaf2[1, row].Value = clnLines[i];
+              this.buffDVmaf2[2, row].Value = clnLines[i] * (double)this.buffDVmaf2[3, row].Value;  //Calculates the adjustment | user_value * multiplier
+              ++row;
+            }
+            else
+            {
+              break;
+            }
           }
         }
       }
@@ -883,7 +950,7 @@
       }
     }
 
-    private void buffDVmaf_CellParsing(object sender, DataGridViewCellParsingEventArgs e)
+    private void BuffDVmaf_CellParsing(object sender, DataGridViewCellParsingEventArgs e)
     {
       string tmpstr = Convert.ToString(e.Value);
       if (e != null && e.Value != null && e.DesiredType.Equals(typeof(int)))
@@ -891,11 +958,10 @@
         try
         {
           int hex;
-          if (tmpstr.EndsWith(" ") && tmpstr.Length ==5)
+          if (tmpstr.EndsWith(" ") && tmpstr.Length == 5)
           {
             tmpstr = tmpstr.TrimEnd(' ');
             hex = int.Parse(tmpstr, System.Globalization.NumberStyles.HexNumber);
-            Console.WriteLine("'hex' in Parsing: " + hex);
             e.Value = hex;
             e.ParsingApplied = true;
           }
@@ -921,22 +987,22 @@
       }
     }
 
-    private void buffDVmaf_KeyDown(object sender, KeyEventArgs e)
+    private void BuffDVmaf_KeyDown(object sender, KeyEventArgs e)
     {
       if (e.Control)
       {
         switch (e.KeyCode)
         {
           case Keys.A:
-            this.selectAllValues();
+            this.SelectAllValues();
             e.Handled = true;
             break;
           case Keys.C:
-            this.copyValue();
+            this.CopyValue();
             e.Handled = true;
             break;
           case Keys.V:
-            this.pasteValue();
+            this.PasteValue();
             e.Handled = true;
             break;
           case Keys.H:
@@ -947,7 +1013,7 @@
       }
     }
 
-    private void buffDV1_Leave(object sender, EventArgs e)
+    private void BuffDV1_Leave(object sender, EventArgs e)
     {
       if (this.buffDVmaf2.RowCount > 0 && this.buffDVmaf2.ColumnCount > 0)
       {
@@ -957,7 +1023,7 @@
 
     }
 
-    private void buffDV1_VisibleChanged(object sender, EventArgs e)
+    private void BuffDV1_VisibleChanged(object sender, EventArgs e)
     {
       if (this.buffDV1.RowCount > 0 && this.buffDV1.ColumnCount > 0)
       {
@@ -966,7 +1032,7 @@
       }
     }
 
-    private void buffDVmaf1_Leave(object sender, EventArgs e)
+    private void BuffDVmaf1_Leave(object sender, EventArgs e)
     {
       if (this.buffDVmaf1.RowCount > 0 && this.buffDVmaf1.ColumnCount > 0)
       {
@@ -975,7 +1041,7 @@
       }
     }
 
-    private void buffDVmaf1_VisibleChanged(object sender, EventArgs e)
+    private void BuffDVmaf1_VisibleChanged(object sender, EventArgs e)
     {
       if (this.buffDVmaf1.RowCount > 0 && this.buffDVmaf1.ColumnCount > 0)
       {
@@ -984,7 +1050,7 @@
       }
     }
 
-    private void buffDVmaf2_Leave(object sender, EventArgs e)
+    private void BuffDVmaf2_Leave(object sender, EventArgs e)
     {
       if (this.buffDVmaf2.RowCount > 0 && this.buffDVmaf2.ColumnCount > 0)
       {
@@ -993,7 +1059,7 @@
       }
     }
 
-    private void buffDVmaf2_VisibleChanged(object sender, EventArgs e)
+    private void BuffDVmaf2_VisibleChanged(object sender, EventArgs e)
     {
       if (this.buffDVmaf2.RowCount > 0 && this.buffDVmaf2.ColumnCount > 0)
       {
@@ -1002,34 +1068,11 @@
       }
     }
 
-    private void buffDVmaf1_CellValidated(object sender, DataGridViewCellEventArgs e)
-    {
-       if (e.RowIndex > -1)
-       {
-         DataGridViewRow row = this.buffDVmaf1.Rows[e.RowIndex];
-         string valueA = row.Cells["Values"].Value.ToString();
-         string valueB = row.Cells["Multiplier"].Value.ToString();
-         int value;
-         double multi = 0;
-         if (int.TryParse(valueA, out value)
-             && double.TryParse(valueB, out multi))
-         {
-          double adjustmentValue = (double)value * multi;
-          if (adjustmentValue > 65535)
-          {
-            adjustmentValue = 65535;
-          }
-
-          row.Cells["Adjustments"].Value = adjustmentValue;
-         }
-       }
-    }
-
-    private void buffDVmaf2_CellValidated(object sender, DataGridViewCellEventArgs e)
+    private void BuffDVmaf1_CellValidated(object sender, DataGridViewCellEventArgs e)
     {
       if (e.RowIndex > -1)
       {
-        DataGridViewRow row = this.buffDVmaf2.Rows[e.RowIndex];
+        DataGridViewRow row = this.buffDVmaf1.Rows[e.RowIndex];
         string valueA = row.Cells["Values"].Value.ToString();
         string valueB = row.Cells["Multiplier"].Value.ToString();
         int value;
@@ -1048,19 +1091,60 @@
       }
     }
 
-    private void viewHelpToolStripMenuItem_Click(object sender, EventArgs e)
+    private void BuffDVmaf2_CellValidated(object sender, DataGridViewCellEventArgs e)
+    {
+      if (e.RowIndex > -1)
+      {
+        DataGridViewRow row = this.buffDVmaf2.Rows[e.RowIndex];
+        string valueA = row.Cells["Values"].Value.ToString();
+        string valueB = row.Cells["Multiplier"].Value.ToString();
+        double value = 0;
+        double multi = 0;
+        if (AutoTune.LogType == "uprev")
+        {
+          if (double.TryParse(valueA, out value)
+    && double.TryParse(valueB, out multi))
+          {
+            double adjustmentValue = (double)value * multi;
+            if (adjustmentValue > 65535)
+            {
+              adjustmentValue = 65535;
+            }
+
+            row.Cells["Adjustments"].Value = adjustmentValue;
+          }
+        }
+        else
+        {
+          if (double.TryParse(valueA, out value)
+    && double.TryParse(valueB, out multi))
+          {
+            double adjustmentValue = (double)value * multi;
+            if (adjustmentValue > 100.00)
+            {
+              adjustmentValue = 100.00;
+            }
+
+            row.Cells["Adjustments"].Value = adjustmentValue;
+          }
+        }
+
+      }
+    }
+
+    private void ViewHelpToolStripMenuItem_Click(object sender, EventArgs e)
     {
       HelpForm helpForm = new HelpForm();
       helpForm.Show();
     }
 
-    private void aboutUsToolStripMenuItem_Click(object sender, EventArgs e)
+    private void AboutUsToolStripMenuItem_Click(object sender, EventArgs e)
     {
       About about = new About();
       about.Show();
     }
 
-    private void toolStripMenuItem1_Click(object sender, EventArgs e)
+    private void ToolStripMenuItem1_Click(object sender, EventArgs e)
     {
       OptionForm optionsForm = new OptionForm();
       optionsForm.Show();
@@ -1071,18 +1155,18 @@
       this.comboBox_NAorFI.SelectedIndex = this.comboBox_NAorFI.Items.IndexOf("Naturally Aspirated");
       this.comboBox_Stage.SelectedIndex = this.comboBox_Stage.Items.IndexOf("Aggressive");
       this.DV_Target.DataSource = this.buffDT.DT_NAaggressive();
-      for ( int i = 0; i < this.DV_Target.Columns.Count; ++i)
+      for (int i = 0; i < this.DV_Target.Columns.Count; ++i)
       {
         this.DV_Target.Columns[i].Width = 50;
       }
     }
 
-    private void comboBox_NAorFI_SelectedIndexChanged(object sender, EventArgs e)
+    private void ComboBox_NAorFI_SelectedIndexChanged(object sender, EventArgs e)
     {
       this.switchTargetValue();
     }
 
-    private void comboBox_Stage_SelectedIndexChanged(object sender, EventArgs e)
+    private void ComboBox_Stage_SelectedIndexChanged(object sender, EventArgs e)
     {
       this.switchTargetValue();
     }
@@ -1194,8 +1278,8 @@
         this.DV_Target.ClearSelection();
       }
     }
-    
-    private void tabPage4_Click(object sender, EventArgs e)
+
+    private void TabPage4_Click(object sender, EventArgs e)
     {
       this.DV_Target.CurrentCell = this.DV_Target[0, 0];
       this.DV_Target.CurrentCell.Selected = false;
@@ -1203,7 +1287,7 @@
       this.DV_Target.Focus();
     }
 
-    private void tabControl1_Click(object sender, EventArgs e)
+    private void TabControl1_Click(object sender, EventArgs e)
     {
       this.buffDV1.ClearSelection();
       this.buffDVmaf1.ClearSelection();

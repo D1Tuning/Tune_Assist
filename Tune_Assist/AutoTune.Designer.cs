@@ -1,4 +1,4 @@
-﻿ using System.Drawing;
+﻿using System.Drawing;
 
 namespace AutoTune
 {
@@ -143,7 +143,7 @@ namespace AutoTune
       this.openFileToolStripMenuItem_Open.Name = "openFileToolStripMenuItem_Open";
       this.openFileToolStripMenuItem_Open.Size = new System.Drawing.Size(124, 22);
       this.openFileToolStripMenuItem_Open.Text = "Open File";
-      this.openFileToolStripMenuItem_Open.Click += new System.EventHandler(this.openFileToolStripMenuItem_Open_Click);
+      this.openFileToolStripMenuItem_Open.Click += new System.EventHandler(this.OpenFileToolStripMenuItem_Open_Click);
       // 
       // closeFileToolStripMenuItem
       // 
@@ -151,7 +151,7 @@ namespace AutoTune
       this.closeFileToolStripMenuItem.Name = "closeFileToolStripMenuItem";
       this.closeFileToolStripMenuItem.Size = new System.Drawing.Size(124, 22);
       this.closeFileToolStripMenuItem.Text = "Close File";
-      this.closeFileToolStripMenuItem.Click += new System.EventHandler(this.closeFileToolStripMenuItem_Click);
+      this.closeFileToolStripMenuItem.Click += new System.EventHandler(this.CloseFileToolStripMenuItem_Click);
       // 
       // toolStripSeparator1
       // 
@@ -163,7 +163,7 @@ namespace AutoTune
       this.toolStripMenuItem1.Name = "toolStripMenuItem1";
       this.toolStripMenuItem1.Size = new System.Drawing.Size(124, 22);
       this.toolStripMenuItem1.Text = "Options";
-      this.toolStripMenuItem1.Click += new System.EventHandler(this.toolStripMenuItem1_Click);
+      this.toolStripMenuItem1.Click += new System.EventHandler(this.ToolStripMenuItem1_Click);
       // 
       // toolStripMenuItem2
       // 
@@ -175,7 +175,7 @@ namespace AutoTune
       this.fileToolStripMenuItem_Exit.Name = "fileToolStripMenuItem_Exit";
       this.fileToolStripMenuItem_Exit.Size = new System.Drawing.Size(124, 22);
       this.fileToolStripMenuItem_Exit.Text = "Exit";
-      this.fileToolStripMenuItem_Exit.Click += new System.EventHandler(this.fileToolStripMenuItem_Exit_Click);
+      this.fileToolStripMenuItem_Exit.Click += new System.EventHandler(this.FileToolStripMenuItem_Exit_Click);
       // 
       // helpToolStripMenuItem
       // 
@@ -192,14 +192,14 @@ namespace AutoTune
       this.viewHelpToolStripMenuItem.Name = "viewHelpToolStripMenuItem";
       this.viewHelpToolStripMenuItem.Size = new System.Drawing.Size(127, 22);
       this.viewHelpToolStripMenuItem.Text = "View Help";
-      this.viewHelpToolStripMenuItem.Click += new System.EventHandler(this.viewHelpToolStripMenuItem_Click);
+      this.viewHelpToolStripMenuItem.Click += new System.EventHandler(this.ViewHelpToolStripMenuItem_Click);
       // 
       // aboutUsToolStripMenuItem
       // 
       this.aboutUsToolStripMenuItem.Name = "aboutUsToolStripMenuItem";
       this.aboutUsToolStripMenuItem.Size = new System.Drawing.Size(127, 22);
       this.aboutUsToolStripMenuItem.Text = "About Us";
-      this.aboutUsToolStripMenuItem.Click += new System.EventHandler(this.aboutUsToolStripMenuItem_Click);
+      this.aboutUsToolStripMenuItem.Click += new System.EventHandler(this.AboutUsToolStripMenuItem_Click);
       // 
       // statusStrip1
       // 
@@ -234,7 +234,7 @@ namespace AutoTune
       this.tabControl1.SelectedIndex = 0;
       this.tabControl1.Size = new System.Drawing.Size(804, 409);
       this.tabControl1.TabIndex = 2;
-      this.tabControl1.Click += new System.EventHandler(this.tabControl1_Click);
+      this.tabControl1.Click += new System.EventHandler(this.TabControl1_Click);
       // 
       // tabPage1
       // 
@@ -283,8 +283,8 @@ namespace AutoTune
       this.buffDV1.TabIndex = 0;
       this.buffDV1.Visible = false;
       this.buffDV1.ColumnHeaderMouseDoubleClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.DV_ColumnHeaderMouseDoubleClick);
-      this.buffDV1.VisibleChanged += new System.EventHandler(this.buffDV1_VisibleChanged);
-      this.buffDV1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.buffDVmaf_KeyDown);
+      this.buffDV1.VisibleChanged += new System.EventHandler(this.BuffDV1_VisibleChanged);
+      this.buffDV1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.BuffDVmaf_KeyDown);
       this.buffDV1.Leave += new System.EventHandler(this.DV_Leave);
       // 
       // tabPage2
@@ -297,8 +297,8 @@ namespace AutoTune
       this.tabPage2.TabIndex = 1;
       this.tabPage2.Text = "MAF Scaling";
       this.tabPage2.UseVisualStyleBackColor = true;
-      this.tabPage2.Enter += new System.EventHandler(this.tabPage2_Enter);
-      this.tabPage2.Leave += new System.EventHandler(this.tabPage2_Leave);
+      this.tabPage2.Enter += new System.EventHandler(this.TabPage2_Enter);
+      this.tabPage2.Leave += new System.EventHandler(this.TabPage2_Leave);
       // 
       // splitContainer1
       // 
@@ -349,13 +349,13 @@ namespace AutoTune
       this.buffDVmaf1.Size = new System.Drawing.Size(253, 377);
       this.buffDVmaf1.TabIndex = 0;
       this.buffDVmaf1.Visible = false;
-      this.buffDVmaf1.CellParsing += new System.Windows.Forms.DataGridViewCellParsingEventHandler(this.buffDVmaf_CellParsing);
-      this.buffDVmaf1.CellValidated += new System.Windows.Forms.DataGridViewCellEventHandler(this.buffDVmaf1_CellValidated);
+      this.buffDVmaf1.CellParsing += new System.Windows.Forms.DataGridViewCellParsingEventHandler(this.BuffDVmaf_CellParsing);
+      this.buffDVmaf1.CellValidated += new System.Windows.Forms.DataGridViewCellEventHandler(this.BuffDVmaf1_CellValidated);
       this.buffDVmaf1.ColumnHeaderMouseDoubleClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.DV_ColumnHeaderMouseDoubleClick);
-      this.buffDVmaf1.EditingControlShowing += new System.Windows.Forms.DataGridViewEditingControlShowingEventHandler(this.buffDVmaf_EditingControlShowing);
-      this.buffDVmaf1.VisibleChanged += new System.EventHandler(this.buffDVmaf1_VisibleChanged);
-      this.buffDVmaf1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.buffDVmaf_KeyDown);
-      this.buffDVmaf1.Leave += new System.EventHandler(this.buffDVmaf1_Leave);
+      this.buffDVmaf1.EditingControlShowing += new System.Windows.Forms.DataGridViewEditingControlShowingEventHandler(this.BuffDVmaf_EditingControlShowing);
+      this.buffDVmaf1.VisibleChanged += new System.EventHandler(this.BuffDVmaf1_VisibleChanged);
+      this.buffDVmaf1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.BuffDVmaf_KeyDown);
+      this.buffDVmaf1.Leave += new System.EventHandler(this.BuffDVmaf1_Leave);
       // 
       // buffDVmaf2
       // 
@@ -385,13 +385,13 @@ namespace AutoTune
       this.buffDVmaf2.Size = new System.Drawing.Size(252, 377);
       this.buffDVmaf2.TabIndex = 1;
       this.buffDVmaf2.Visible = false;
-      this.buffDVmaf2.CellParsing += new System.Windows.Forms.DataGridViewCellParsingEventHandler(this.buffDVmaf_CellParsing);
-      this.buffDVmaf2.CellValidated += new System.Windows.Forms.DataGridViewCellEventHandler(this.buffDVmaf2_CellValidated);
+      this.buffDVmaf2.CellParsing += new System.Windows.Forms.DataGridViewCellParsingEventHandler(this.BuffDVmaf_CellParsing);
+      this.buffDVmaf2.CellValidated += new System.Windows.Forms.DataGridViewCellEventHandler(this.BuffDVmaf2_CellValidated);
       this.buffDVmaf2.ColumnHeaderMouseDoubleClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.DV_ColumnHeaderMouseDoubleClick);
-      this.buffDVmaf2.EditingControlShowing += new System.Windows.Forms.DataGridViewEditingControlShowingEventHandler(this.buffDVmaf_EditingControlShowing);
-      this.buffDVmaf2.VisibleChanged += new System.EventHandler(this.buffDVmaf2_VisibleChanged);
-      this.buffDVmaf2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.buffDVmaf_KeyDown);
-      this.buffDVmaf2.Leave += new System.EventHandler(this.buffDVmaf2_Leave);
+      this.buffDVmaf2.EditingControlShowing += new System.Windows.Forms.DataGridViewEditingControlShowingEventHandler(this.BuffDVmaf_EditingControlShowing);
+      this.buffDVmaf2.VisibleChanged += new System.EventHandler(this.BuffDVmaf2_VisibleChanged);
+      this.buffDVmaf2.KeyDown += new System.Windows.Forms.KeyEventHandler(this.BuffDVmaf_KeyDown);
+      this.buffDVmaf2.Leave += new System.EventHandler(this.BuffDVmaf2_Leave);
       // 
       // tabPage3
       // 
@@ -676,7 +676,7 @@ namespace AutoTune
       this.tabPage4.TabIndex = 3;
       this.tabPage4.Text = "Fuel Target";
       this.tabPage4.UseVisualStyleBackColor = true;
-      this.tabPage4.Click += new System.EventHandler(this.tabPage4_Click);
+      this.tabPage4.Click += new System.EventHandler(this.TabPage4_Click);
       // 
       // DV_Target
       // 
@@ -702,7 +702,7 @@ namespace AutoTune
       this.DV_Target.ShowRowErrors = false;
       this.DV_Target.Size = new System.Drawing.Size(405, 179);
       this.DV_Target.TabIndex = 2;
-      this.DV_Target.KeyDown += new System.Windows.Forms.KeyEventHandler(this.buffDVmaf_KeyDown);
+      this.DV_Target.KeyDown += new System.Windows.Forms.KeyEventHandler(this.BuffDVmaf_KeyDown);
       this.DV_Target.Leave += new System.EventHandler(this.DV_Leave);
       // 
       // comboBox_Stage
@@ -722,7 +722,7 @@ namespace AutoTune
       this.comboBox_Stage.Name = "comboBox_Stage";
       this.comboBox_Stage.Size = new System.Drawing.Size(138, 23);
       this.comboBox_Stage.TabIndex = 1;
-      this.comboBox_Stage.SelectedIndexChanged += new System.EventHandler(this.comboBox_Stage_SelectedIndexChanged);
+      this.comboBox_Stage.SelectedIndexChanged += new System.EventHandler(this.ComboBox_Stage_SelectedIndexChanged);
       // 
       // comboBox_NAorFI
       // 
@@ -742,7 +742,7 @@ namespace AutoTune
       this.comboBox_NAorFI.Name = "comboBox_NAorFI";
       this.comboBox_NAorFI.Size = new System.Drawing.Size(138, 23);
       this.comboBox_NAorFI.TabIndex = 0;
-      this.comboBox_NAorFI.SelectedIndexChanged += new System.EventHandler(this.comboBox_NAorFI_SelectedIndexChanged);
+      this.comboBox_NAorFI.SelectedIndexChanged += new System.EventHandler(this.ComboBox_NAorFI_SelectedIndexChanged);
       // 
       // textBox_MAF1
       // 
@@ -786,7 +786,7 @@ namespace AutoTune
       this.btnCancelParse.Text = "Cancel Load";
       this.btnCancelParse.UseVisualStyleBackColor = true;
       this.btnCancelParse.Visible = false;
-      this.btnCancelParse.Click += new System.EventHandler(this.btnCancel_Click);
+      this.btnCancelParse.Click += new System.EventHandler(this.BtnCancel_Click);
       // 
       // AutoTune
       // 
@@ -844,7 +844,7 @@ namespace AutoTune
     private System.Windows.Forms.TabPage tabPage1;
     private System.Windows.Forms.TabPage tabPage2;
     //public BuffDV buffDV1;
-    private BuffDT buffDT = new BuffDT() ;
+    private BuffDT buffDT = new BuffDT();
     private BuffDV buffDV1 = new BuffDV();
     private BuffDV buffDVmaf1 = new BuffDV();
     private BuffDV buffDVmaf2 = new BuffDV();

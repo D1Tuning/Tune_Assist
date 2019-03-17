@@ -3,10 +3,10 @@
   using System;
   using System.Windows.Forms;
 
-  static class Program
+  internal static class Program
   {
     [STAThread]
-    static void Main(string[] arg)
+    private static void Main(string[] arg)
     {
       try
       {
@@ -15,9 +15,12 @@
         if (arg.Length != 0)
         {
           AutoTune.FileName = arg[0];
+          Application.Run(new AutoTune(AutoTune.FileName));
         }
-
-        Application.Run(new AutoTune());
+        else
+        {
+          Application.Run(new AutoTune());
+        }
       }
       catch
       {
