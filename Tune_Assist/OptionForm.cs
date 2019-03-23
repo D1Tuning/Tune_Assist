@@ -6,15 +6,16 @@
 
   public partial class OptionForm : Form
   {
-    private bool ClosedLoop;
-    private bool OpenLoop;
-    private bool FilterAirTemp;
-    private bool FilterAccel;
-    private bool MinimalChanges;
+    private bool closedLoop;
+    private bool openLoop;
+    private bool filterAirTemp;
+    private bool filterAccel;
+    private bool minimalChanges;
 
     public OptionForm()
     {
       this.InitializeComponent();
+      this.Sensitivity_value_label.Text = this.trackBar1.Value + " %";
     }
 
     private void Minimal_MAF_checkbox_CheckedChanged(object sender, EventArgs e)
@@ -23,28 +24,35 @@
       Properties.Settings.Default.Save();
     }
 
-    private void checkBoxAirTemp_CheckedChanged(object sender, EventArgs e)
+    private void CheckBoxAirTemp_CheckedChanged(object sender, EventArgs e)
     {
       Properties.Settings.Default.MAF_IAT = this.checkBoxAirTemp.Checked;
       Properties.Settings.Default.Save();
     }
 
-    private void checkBoxAccelChange_CheckedChanged(object sender, EventArgs e)
+    private void CheckBoxAccelChange_CheckedChanged(object sender, EventArgs e)
     {
       Properties.Settings.Default.MAF_ACCEL = this.checkBoxAccelChange.Checked;
       Properties.Settings.Default.Save();
     }
 
-    private void checkBoxClosedLoop_CheckedChanged(object sender, EventArgs e)
+    private void CheckBoxClosedLoop_CheckedChanged(object sender, EventArgs e)
     {
       Properties.Settings.Default.MAF_CL = this.checkBoxClosedLoop.Checked;
       Properties.Settings.Default.Save();
     }
 
-    private void checkBoxOpenLoop_CheckedChanged(object sender, EventArgs e)
+    private void CheckBoxOpenLoop_CheckedChanged(object sender, EventArgs e)
     {
       Properties.Settings.Default.MAF_OL = this.checkBoxOpenLoop.Checked;
       Properties.Settings.Default.Save();
+    }
+
+    private void TrackBar1_ValueChanged(object sender, EventArgs e)
+    {
+      Properties.Settings.Default.MAF_Sensitivity = this.trackBar1.Value;
+      Properties.Settings.Default.Save();
+      this.Sensitivity_value_label.Text = this.trackBar1.Value + " %";
     }
   }
 }

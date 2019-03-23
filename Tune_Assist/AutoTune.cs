@@ -263,8 +263,27 @@
           {
             for (int a = 0; a < 64; ++a)
             {
-              this.buffDVmaf1["Multiplier", a].Value = ((double)dt.Rows[a][1]) / 100;
-              this.buffDVmaf2["Multiplier", a].Value = ((double)dt.Rows[a][2]) / 100;
+              // MAF Sensitivity
+              double sensitivity = Properties.Settings.Default.MAF_Sensitivity;
+              sensitivity /= 100;
+
+              double maf1_value = ((double)dt.Rows[a][1]) / 100;
+              double tempdiff1;
+              tempdiff1 = maf1_value - 1;
+              tempdiff1 *= sensitivity;
+              maf1_value = tempdiff1 + 1;
+
+              double maf2_value = ((double)dt.Rows[a][2]) / 100;
+              double tempdiff2;
+              tempdiff2 = maf2_value - 1;
+              tempdiff2 *= sensitivity;
+              maf2_value = tempdiff2 + 1;
+
+              // this.buffDVmaf1["Multiplier", a].Value = ((double)dt.Rows[a][1]) / 100;
+              // this.buffDVmaf2["Multiplier", a].Value = ((double)dt.Rows[a][2]) / 100;
+
+              this.buffDVmaf1["Multiplier", a].Value = maf1_value;
+              this.buffDVmaf2["Multiplier", a].Value = maf2_value;
               this.buffDVmaf1["Hits", a].Value = (int)dt.Rows[a][3];
               this.buffDVmaf2["Hits", a].Value = (int)dt.Rows[a][4];
             }

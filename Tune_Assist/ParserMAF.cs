@@ -575,7 +575,7 @@
               }
               else if (CL1 != 100 && OL1 != 100)
               {
-                final1 = (double)(CL1 * .333) + (OL1 * .666);
+                final1 = (double)(CL1 * .445) + (OL1 * .555);
               }
               else
               {
@@ -592,7 +592,7 @@
               }
               else if (CL2 != 100 && OL2 != 100)
               {
-                final2 = (double)(CL2 * .333) + (OL2 * .666);
+                final2 = (double)(CL2 * .445) + (OL2 * .555);
               }
               else
               {

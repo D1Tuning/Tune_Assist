@@ -82,5 +82,17 @@ namespace AutoTune.Properties {
                 this["Maf_MINIMAL"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
+        public int MAF_Sensitivity {
+            get {
+                return ((int)(this["MAF_Sensitivity"]));
+            }
+            set {
+                this["MAF_Sensitivity"] = value;
+            }
+        }
     }
 }

@@ -35,17 +35,21 @@
       this.richTextBoxOptions = new System.Windows.Forms.RichTextBox();
       this.OptionTab2 = new System.Windows.Forms.TabPage();
       this.statusStrip1 = new System.Windows.Forms.StatusStrip();
+      this.trackBar1 = new System.Windows.Forms.TrackBar();
+      this.TrackBar_Label = new System.Windows.Forms.Label();
       this.Minimal_MAF_checkbox = new System.Windows.Forms.CheckBox();
       this.checkBoxAirTemp = new System.Windows.Forms.CheckBox();
       this.checkBoxAccelChange = new System.Windows.Forms.CheckBox();
       this.checkBoxOpenLoop = new System.Windows.Forms.CheckBox();
       this.checkBoxClosedLoop = new System.Windows.Forms.CheckBox();
+      this.Sensitivity_value_label = new System.Windows.Forms.Label();
       this.OptionTabControl.SuspendLayout();
       this.OptionTab1.SuspendLayout();
       ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).BeginInit();
       this.splitContainer1.Panel1.SuspendLayout();
       this.splitContainer1.Panel2.SuspendLayout();
       this.splitContainer1.SuspendLayout();
+      ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).BeginInit();
       this.SuspendLayout();
       // 
       // OptionTabControl
@@ -78,6 +82,9 @@
       // 
       // splitContainer1.Panel1
       // 
+      this.splitContainer1.Panel1.Controls.Add(this.Sensitivity_value_label);
+      this.splitContainer1.Panel1.Controls.Add(this.TrackBar_Label);
+      this.splitContainer1.Panel1.Controls.Add(this.trackBar1);
       this.splitContainer1.Panel1.Controls.Add(this.Minimal_MAF_checkbox);
       this.splitContainer1.Panel1.Controls.Add(this.checkBoxAirTemp);
       this.splitContainer1.Panel1.Controls.Add(this.checkBoxAccelChange);
@@ -88,7 +95,7 @@
       // 
       this.splitContainer1.Panel2.Controls.Add(this.richTextBoxOptions);
       this.splitContainer1.Size = new System.Drawing.Size(459, 192);
-      this.splitContainer1.SplitterDistance = 198;
+      this.splitContainer1.SplitterDistance = 224;
       this.splitContainer1.TabIndex = 0;
       // 
       // richTextBoxOptions
@@ -98,7 +105,7 @@
       this.richTextBoxOptions.Location = new System.Drawing.Point(0, 0);
       this.richTextBoxOptions.Margin = new System.Windows.Forms.Padding(6);
       this.richTextBoxOptions.Name = "richTextBoxOptions";
-      this.richTextBoxOptions.Size = new System.Drawing.Size(257, 192);
+      this.richTextBoxOptions.Size = new System.Drawing.Size(231, 192);
       this.richTextBoxOptions.TabIndex = 0;
       this.richTextBoxOptions.Text = resources.GetString("richTextBoxOptions.Text");
       // 
@@ -120,13 +127,37 @@
       this.statusStrip1.TabIndex = 1;
       this.statusStrip1.Text = "statusStrip1";
       // 
+      // trackBar1
+      // 
+      this.trackBar1.DataBindings.Add(new System.Windows.Forms.Binding("Value", global::AutoTune.Properties.Settings.Default, "MAF_Sensitivity", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
+      this.trackBar1.Location = new System.Drawing.Point(3, 129);
+      this.trackBar1.Maximum = 100;
+      this.trackBar1.Minimum = 20;
+      this.trackBar1.Name = "trackBar1";
+      this.trackBar1.Size = new System.Drawing.Size(216, 45);
+      this.trackBar1.TabIndex = 5;
+      this.trackBar1.TickStyle = System.Windows.Forms.TickStyle.None;
+      this.trackBar1.Value = global::AutoTune.Properties.Settings.Default.MAF_Sensitivity;
+      this.trackBar1.ValueChanged += new System.EventHandler(this.TrackBar1_ValueChanged);
+      // 
+      // TrackBar_Label
+      // 
+      this.TrackBar_Label.AutoSize = true;
+      this.TrackBar_Label.Font = new System.Drawing.Font("Microsoft Sans Serif", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+      this.TrackBar_Label.Location = new System.Drawing.Point(56, 113);
+      this.TrackBar_Label.Name = "TrackBar_Label";
+      this.TrackBar_Label.Size = new System.Drawing.Size(124, 15);
+      this.TrackBar_Label.TabIndex = 6;
+      this.TrackBar_Label.Text = "Adjustment Sensitivity";
+      this.TrackBar_Label.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+      // 
       // Minimal_MAF_checkbox
       // 
       this.Minimal_MAF_checkbox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
       this.Minimal_MAF_checkbox.AutoSize = true;
       this.Minimal_MAF_checkbox.Checked = global::AutoTune.Properties.Settings.Default.Maf_MINIMAL;
       this.Minimal_MAF_checkbox.DataBindings.Add(new System.Windows.Forms.Binding("Checked", global::AutoTune.Properties.Settings.Default, "Maf_MINIMAL", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
-      this.Minimal_MAF_checkbox.Location = new System.Drawing.Point(3, 145);
+      this.Minimal_MAF_checkbox.Location = new System.Drawing.Point(3, 82);
       this.Minimal_MAF_checkbox.Name = "Minimal_MAF_checkbox";
       this.Minimal_MAF_checkbox.Size = new System.Drawing.Size(136, 17);
       this.Minimal_MAF_checkbox.TabIndex = 4;
@@ -140,13 +171,13 @@
       this.checkBoxAirTemp.Checked = global::AutoTune.Properties.Settings.Default.MAF_IAT;
       this.checkBoxAirTemp.CheckState = System.Windows.Forms.CheckState.Checked;
       this.checkBoxAirTemp.DataBindings.Add(new System.Windows.Forms.Binding("Checked", global::AutoTune.Properties.Settings.Default, "MAF_IAT", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
-      this.checkBoxAirTemp.Location = new System.Drawing.Point(3, 85);
+      this.checkBoxAirTemp.Location = new System.Drawing.Point(3, 59);
       this.checkBoxAirTemp.Name = "checkBoxAirTemp";
       this.checkBoxAirTemp.Size = new System.Drawing.Size(171, 17);
       this.checkBoxAirTemp.TabIndex = 3;
       this.checkBoxAirTemp.Text = "Filter Intake Air Temp Changes";
       this.checkBoxAirTemp.UseVisualStyleBackColor = true;
-      this.checkBoxAirTemp.CheckedChanged += new System.EventHandler(this.checkBoxAirTemp_CheckedChanged);
+      this.checkBoxAirTemp.CheckedChanged += new System.EventHandler(this.CheckBoxAirTemp_CheckedChanged);
       // 
       // checkBoxAccelChange
       // 
@@ -154,13 +185,13 @@
       this.checkBoxAccelChange.Checked = global::AutoTune.Properties.Settings.Default.MAF_ACCEL;
       this.checkBoxAccelChange.CheckState = System.Windows.Forms.CheckState.Checked;
       this.checkBoxAccelChange.DataBindings.Add(new System.Windows.Forms.Binding("Checked", global::AutoTune.Properties.Settings.Default, "MAF_ACCEL", true, System.Windows.Forms.DataSourceUpdateMode.OnPropertyChanged));
-      this.checkBoxAccelChange.Location = new System.Drawing.Point(3, 62);
+      this.checkBoxAccelChange.Location = new System.Drawing.Point(3, 36);
       this.checkBoxAccelChange.Name = "checkBoxAccelChange";
       this.checkBoxAccelChange.Size = new System.Drawing.Size(154, 17);
       this.checkBoxAccelChange.TabIndex = 2;
       this.checkBoxAccelChange.Text = "Filter Quick Accel Changes";
       this.checkBoxAccelChange.UseVisualStyleBackColor = true;
-      this.checkBoxAccelChange.CheckedChanged += new System.EventHandler(this.checkBoxAccelChange_CheckedChanged);
+      this.checkBoxAccelChange.CheckedChanged += new System.EventHandler(this.CheckBoxAccelChange_CheckedChanged);
       // 
       // checkBoxOpenLoop
       // 
@@ -174,7 +205,7 @@
       this.checkBoxOpenLoop.TabIndex = 1;
       this.checkBoxOpenLoop.Text = "Open Loop";
       this.checkBoxOpenLoop.UseVisualStyleBackColor = true;
-      this.checkBoxOpenLoop.CheckedChanged += new System.EventHandler(this.checkBoxOpenLoop_CheckedChanged);
+      this.checkBoxOpenLoop.CheckedChanged += new System.EventHandler(this.CheckBoxOpenLoop_CheckedChanged);
       // 
       // checkBoxClosedLoop
       // 
@@ -188,7 +219,18 @@
       this.checkBoxClosedLoop.TabIndex = 0;
       this.checkBoxClosedLoop.Text = "Closed Loop";
       this.checkBoxClosedLoop.UseVisualStyleBackColor = true;
-      this.checkBoxClosedLoop.CheckedChanged += new System.EventHandler(this.checkBoxClosedLoop_CheckedChanged);
+      this.checkBoxClosedLoop.CheckedChanged += new System.EventHandler(this.CheckBoxClosedLoop_CheckedChanged);
+      // 
+      // Sensitivity_value_label
+      // 
+      this.Sensitivity_value_label.AutoSize = true;
+      this.Sensitivity_value_label.Font = new System.Drawing.Font("Microsoft Sans Serif", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+      this.Sensitivity_value_label.Location = new System.Drawing.Point(96, 149);
+      this.Sensitivity_value_label.Name = "Sensitivity_value_label";
+      this.Sensitivity_value_label.Size = new System.Drawing.Size(20, 16);
+      this.Sensitivity_value_label.TabIndex = 7;
+      this.Sensitivity_value_label.Text = "%";
+      this.Sensitivity_value_label.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
       // 
       // OptionForm
       // 
@@ -210,6 +252,7 @@
       this.splitContainer1.Panel2.ResumeLayout(false);
       ((System.ComponentModel.ISupportInitialize)(this.splitContainer1)).EndInit();
       this.splitContainer1.ResumeLayout(false);
+      ((System.ComponentModel.ISupportInitialize)(this.trackBar1)).EndInit();
       this.ResumeLayout(false);
       this.PerformLayout();
 
@@ -228,5 +271,8 @@
     private System.Windows.Forms.CheckBox checkBoxClosedLoop;
     private System.Windows.Forms.RichTextBox richTextBoxOptions;
     private System.Windows.Forms.CheckBox Minimal_MAF_checkbox;
+    private System.Windows.Forms.Label TrackBar_Label;
+    private System.Windows.Forms.TrackBar trackBar1;
+    private System.Windows.Forms.Label Sensitivity_value_label;
   }
 }
