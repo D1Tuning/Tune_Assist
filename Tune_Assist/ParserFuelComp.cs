@@ -242,8 +242,8 @@
             {
               this.longtrim1 = Convert.ToDouble(tempgrid.Rows[row].Cells[IndexFinder.LtB1Dex].Value);
               this.longtrim2 = Convert.ToDouble(tempgrid.Rows[row].Cells[IndexFinder.LtB2Dex].Value);
-              this.finaltrim1 = (this.shorttrim1 + Convert.ToInt32(this.longtrim1)) - 100;
-              this.finaltrim2 = (this.shorttrim2 + Convert.ToInt32(this.longtrim2)) - 100;
+              this.finaltrim1 = this.shorttrim1 + (Convert.ToInt32(this.longtrim1) - 100);
+              this.finaltrim2 = this.shorttrim2 + (Convert.ToInt32(this.longtrim2) - 100);
               this.finaltrim1 = (this.finaltrim1 + this.finaltrim2) / 2;
             }
             else

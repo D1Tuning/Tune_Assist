@@ -220,7 +220,7 @@
                   }
                   else
                   {
-                    this.finaltrim1 = (double)(this.shorttrim1 * .333) + (this.longtrim1 * .666);
+                    this.finaltrim1 = this.shorttrim1 + (Convert.ToInt32(this.longtrim1) - 100);
                   }
 
                   if (this.longtrim2 == 100)
@@ -229,7 +229,7 @@
                   }
                   else
                   {
-                    this.finaltrim2 = (double)(this.shorttrim2 * .333) + (this.longtrim2 * .666);
+                    this.finaltrim2 = this.shorttrim2 + (Convert.ToInt32(this.longtrim2) - 100);
                   }
                 }
 
@@ -252,13 +252,13 @@
                   }
                   else
                   {
-                    this.finaltrim1 = (double)(this.shorttrim1 * .333) + (this.longtrim1 * .666);
+                    this.finaltrim1 = this.shorttrim1 + (Convert.ToInt32(this.longtrim1) - 100);
 
                   }
 
                   if (this.longtrim2 == 100)
                   {
-                    this.finaltrim2 = (double)(this.shorttrim2 * .333) + (this.longtrim2 * .666);
+                    this.finaltrim2 = this.shorttrim2 + (Convert.ToInt32(this.longtrim2) - 100);
                   }
                   else
                   {
