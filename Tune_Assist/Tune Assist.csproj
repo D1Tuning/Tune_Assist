@@ -136,6 +136,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <None Include="stylecop.json" />
+    <None Include="UpRev Parameters\D1-Tuning.skm" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
