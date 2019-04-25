@@ -245,7 +245,7 @@
                 {
                   this.longtrim1 = Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.LtB1Dex].Value);
                   this.longtrim2 = Convert.ToDouble(tempgrid.Rows[r].Cells[IndexFinder.LtB2Dex].Value);
-
+               
                   if (this.longtrim1 == 100)
                   {
                     this.finaltrim1 = this.shorttrim1;
